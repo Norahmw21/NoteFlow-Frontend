@@ -10,7 +10,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
 public class ApiClient {
-    private static String BASE = "http://localhost:8080/api"; // change if needed
+    private static String BASE = "http://localhost:8080/api";
     private static final HttpClient http = HttpClient.newBuilder().cookieHandler(new CookieManager()).build();
     private static final ObjectMapper mapper = new ObjectMapper();
 

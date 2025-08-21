@@ -9,80 +9,330 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
+import javafx.scene.effect.DropShadow;
+import javafx.scene.paint.Color;
+
 
 public class AppShell extends BorderPane {
 
-    // palette
-    private static final String C1 = "#DABFFF"; // lavender
-    private static final String C2 = "#907AD6"; // purple
-    private static final String C3 = "#4F518C"; // dark purple-blue
-    private static final String C4 = "#2C2A4A"; // deep navy
-    private static final String C5 = "#7FDEFF"; // cyan
+    private static final String PRIMARY_LIGHT = "#DABFFF";     // lavender
+    private static final String PRIMARY_DARK = "#4F518C";      // dark purple-blue
+    private static final String SIDEBAR_BG = "#FAFBFF";        // very light blue-white
+    private static final String CARD_BG = "#FFFFFF";           // white
+    private static final String TEXT_PRIMARY = "#2C2A4A";      // navy for primary text
+    private static final String TEXT_SECONDARY = "#6C7293";    // muted purple-gray
+    private static final String BORDER_COLOR = "#E5E9F2";      // light border
 
     private final StackPane outlet = new StackPane();
     public final Router router = new Router(outlet);
 
+
+    private Button activeNavBtn = null;
+
     public AppShell() {
-        setPrefSize(1100, 720);
+        setPrefSize(1200, 800);
+        getStyleClass().add("app-shell");
 
-        // sidebar (fixed)
-        VBox side = new VBox(12);
-        side.setPadding(new Insets(24));
-        side.setPrefWidth(220);
-        side.setStyle("-fx-background-color: white; -fx-border-color: rgba(0,0,0,0.06); -fx-border-width: 0 1 0 0;");
+        //  sidebar
+        VBox sidebar = createSidebar();
 
-        Image logo = new Image(getClass().getResourceAsStream("/logo.png"));
-        ImageView imageView = new ImageView(logo);
-        imageView.setFitWidth(150);
-        imageView.setFitHeight(100);
-        Button btnNotes   = navBtn("My Notes");
-        Button btnFav     = navBtn("Favorite");
-        Button btnProfile = navBtn("Profile");
-        Button btnTodos   = navBtn("To-Do");
+        //  top bar
+        HBox topBar = createTopBar();
 
-        side.getChildren().addAll(imageView, spacer(10), btnNotes, btnFav, btnTodos, spacer(20), btnProfile);
+        // Content area with subtle background
+        outlet.setStyle("-fx-background-color: #FAFBFF;");
 
-        // top bar (fixed)
-        HBox top = new HBox(12);
-        top.setPadding(new Insets(16, 24, 16, 24));
-        top.setAlignment(Pos.CENTER_LEFT);
-        Label hello = new Label("Hello 👋");
-        hello.setStyle("-fx-text-fill: " + C4 + "; -fx-font-size: 18; -fx-font-weight: bold;");
-        Region grow = new Region(); HBox.setHgrow(grow, Priority.ALWAYS);
-        TextField search = new TextField(); search.setPromptText("Search");
-        search.setPrefWidth(260);
+        // Add subtle shadow between sections
+        addSectionShadows(sidebar, topBar);
 
-        top.getChildren().addAll(hello, grow, search);
-        top.setStyle("-fx-background-color: linear-gradient(to bottom, #FFFFFF, #F7F8FF);");
-
-        // center outlet (content only)
-        outlet.setPadding(new Insets(24));
-        outlet.setStyle("-fx-background-color: #FFFFFF;");
-
-        setLeft(side);
-        setTop(top);
+        setLeft(sidebar);
+        setTop(topBar);
         setCenter(outlet);
 
-        btnNotes.setOnAction(e -> router.navigate("folders"));
-        btnFav.setOnAction(e -> router.navigate("favorites"));
-        btnTodos.setOnAction(e -> router.navigate("todos"));
-        btnProfile.setOnAction(e -> router.navigate("profile"));
+        // Set up navigation
+        setupNavigation();
     }
 
-    public StackPane outlet() { return outlet; }
+    private VBox createSidebar() {
+        VBox sidebar = new VBox();
+        sidebar.setPrefWidth(240);
+        sidebar.setStyle(String.format(
+                "-fx-background-color: %s; " +
+                        "-fx-border-color: %s; " +
+                        "-fx-border-width: 0 1 0 0;",
+                SIDEBAR_BG, BORDER_COLOR
+        ));
 
-    private Button navBtn(String text) {
-        Button b = new Button(text);
-        b.setMaxWidth(Double.MAX_VALUE);
-        b.setStyle("""
-            -fx-background-radius: 12;
-            -fx-background-color: transparent;
-            -fx-text-fill: %s;
-            -fx-font-size: 14;
-            """.formatted(C3));
-        b.setOnMouseEntered(e -> b.setStyle("-fx-background-color:" + C1 + "; -fx-background-radius:12; -fx-text-fill:" + C4 + "; -fx-font-size:14;"));
-        b.setOnMouseExited (e -> b.setStyle("-fx-background-color: transparent; -fx-text-fill:" + C3 + "; -fx-font-size:14;"));
-        return b;
+        // Logo section
+        VBox logoSection = new VBox(8);
+        logoSection.setPadding(new Insets(24, 20, 20, 20));
+        logoSection.setAlignment(Pos.CENTER_LEFT);
+
+        try {
+            Image logo = new Image(getClass().getResourceAsStream("/logo.png"));
+            ImageView logoView = new ImageView(logo);
+            logoView.setFitWidth(150);
+            logoView.setFitHeight(100);
+            logoView.setPreserveRatio(true);
+
+            logoSection.getChildren().add(logoView);
+        } catch (Exception e) {
+            // Fallback if logo not found
+            Label appName = new Label("NoteFlow");
+            appName.setStyle(String.format(
+                    "-fx-font-size: 20; -fx-font-weight: bold; -fx-text-fill: %s;",
+                    PRIMARY_DARK
+            ));
+            logoSection.getChildren().add(appName);
+        }
+
+        // Navigation section
+        VBox navSection = new VBox(4);
+        navSection.setPadding(new Insets(0, 16, 20, 16));
+
+        Label navTitle = new Label("NAVIGATION");
+        navTitle.setStyle(String.format(
+                "-fx-font-size: 11; -fx-font-weight: bold; -fx-text-fill: %s; " +
+                        "-fx-padding: 0 8 12 8; -fx-opacity: 0.7;",
+                TEXT_SECONDARY
+        ));
+
+        Button btnNotes = createNavButton("📝", "My Notes", "notes");
+        Button btnFav = createNavButton("⭐", "Favorites", "favorites");
+        Button btnTodos = createNavButton("✅", "To-Do", "todos");
+
+        navSection.getChildren().addAll(navTitle, btnNotes, btnFav, btnTodos);
+
+        // Account section
+        VBox accountSection = new VBox(4);
+        accountSection.setPadding(new Insets(20, 16, 24, 16));
+
+        Label accountTitle = new Label("ACCOUNT");
+        accountTitle.setStyle(String.format(
+                "-fx-font-size: 11; -fx-font-weight: bold; -fx-text-fill: %s; " +
+                        "-fx-padding: 0 8 12 8; -fx-opacity: 0.7;",
+                TEXT_SECONDARY
+        ));
+
+        Button btnProfile = createNavButton("👤", "Profile", "profile");
+
+        accountSection.getChildren().addAll(accountTitle, btnProfile);
+
+        // Add flexible spacer
+        Region spacer = new Region();
+        VBox.setVgrow(spacer, Priority.ALWAYS);
+
+        sidebar.getChildren().addAll(logoSection, navSection, spacer, accountSection);
+
+        return sidebar;
     }
-    private Node spacer(double h) { Region r = new Region(); r.setMinHeight(h); return r; }
+
+    private HBox createTopBar() {
+        HBox topBar = new HBox();
+        topBar.setPadding(new Insets(16, 24, 16, 24));
+        topBar.setAlignment(Pos.CENTER_LEFT);
+        topBar.setStyle(String.format(
+                "-fx-background-color: linear-gradient(to bottom, %s, %s); " +
+                        "-fx-border-color: %s; " +
+                        "-fx-border-width: 0 0 1 0;",
+                CARD_BG, "#F8FAFF", BORDER_COLOR
+        ));
+
+        // Welcome section
+        VBox welcomeSection = new VBox(2);
+
+        Label greeting = new Label("Welcome back! 👋");
+        greeting.setStyle(String.format(
+                "-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: %s;",
+                TEXT_PRIMARY
+        ));
+
+        Label subtitle = new Label("Let's get productive today");
+        subtitle.setStyle(String.format(
+                "-fx-font-size: 13; -fx-text-fill: %s; -fx-opacity: 0.8;",
+                TEXT_SECONDARY
+        ));
+
+        welcomeSection.getChildren().addAll(greeting, subtitle);
+
+        // Flexible spacer
+        Region grow = new Region();
+        HBox.setHgrow(grow, Priority.ALWAYS);
+
+        // Enhanced search section
+        HBox searchSection = new HBox(8);
+        searchSection.setAlignment(Pos.CENTER_RIGHT);
+
+        TextField searchField = new TextField();
+        searchField.setPromptText("Search notes, todos...");
+        searchField.setPrefWidth(280);
+        searchField.setStyle(String.format(
+                "-fx-background-color: %s; " +
+                        "-fx-border-color: %s; " +
+                        "-fx-border-radius: 8; " +
+                        "-fx-background-radius: 8; " +
+                        "-fx-padding: 10 16 10 40; " +
+                        "-fx-font-size: 13; " +
+                        "-fx-prompt-text-fill: %s;",
+                CARD_BG, BORDER_COLOR, TEXT_SECONDARY
+        ));
+
+        // Search icon
+        Label searchIcon = new Label("🔍");
+        searchIcon.setStyle(String.format(
+                "-fx-font-size: 14; -fx-text-fill: %s; " +
+                        "-fx-translate-x: 28; -fx-translate-y: 0;",
+                TEXT_SECONDARY
+        ));
+
+        StackPane searchContainer = new StackPane();
+        searchContainer.getChildren().addAll(searchField, searchIcon);
+        searchContainer.setAlignment(Pos.CENTER_LEFT);
+
+        // Add subtle shadow to search
+        DropShadow searchShadow = new DropShadow();
+        searchShadow.setColor(Color.rgb(0, 0, 0, 0.05));
+        searchShadow.setOffsetY(1);
+        searchShadow.setRadius(2);
+        searchContainer.setEffect(searchShadow);
+
+        searchSection.getChildren().add(searchContainer);
+
+        topBar.getChildren().addAll(welcomeSection, grow, searchSection);
+
+        return topBar;
+    }
+
+    private Button createNavButton(String icon, String text, String route) {
+        Button button = new Button();
+
+        // Create content with icon and text
+        HBox content = new HBox(12);
+        content.setAlignment(Pos.CENTER_LEFT);
+
+        Label iconLabel = new Label(icon);
+        iconLabel.setStyle("-fx-font-size: 16;");
+
+        Label textLabel = new Label(text);
+        textLabel.setStyle("-fx-font-size: 14; -fx-font-weight: 500;");
+
+        content.getChildren().addAll(iconLabel, textLabel);
+        button.setGraphic(content);
+        button.setText(""); // Clear default text
+
+        button.setMaxWidth(Double.MAX_VALUE);
+        button.setAlignment(Pos.CENTER_LEFT);
+
+        // Default style
+        setNavButtonStyle(button, false);
+
+        // Store route for navigation
+        button.setUserData(route);
+
+        return button;
+    }
+
+    private void setNavButtonStyle(Button button, boolean isActive) {
+        if (isActive) {
+            button.setStyle(String.format(
+                    "-fx-background-color: %s; " +
+                            "-fx-background-radius: 8; " +
+                            "-fx-text-fill: %s; " +
+                            "-fx-padding: 12 16; " +
+                            "-fx-cursor: hand; " +
+                            "-fx-border-color: transparent; " +
+                            "-fx-border-width: 0;",
+                    PRIMARY_LIGHT, TEXT_PRIMARY
+            ));
+
+            // Add active state shadow
+            DropShadow activeShadow = new DropShadow();
+            activeShadow.setColor(Color.rgb(70, 35, 233, 0.2));
+            activeShadow.setOffsetY(2);
+            activeShadow.setRadius(4);
+            button.setEffect(activeShadow);
+
+        } else {
+            button.setStyle(String.format(
+                    "-fx-background-color: transparent; " +
+                            "-fx-background-radius: 8; " +
+                            "-fx-text-fill: %s; " +
+                            "-fx-padding: 12 16; " +
+                            "-fx-cursor: hand; " +
+                            "-fx-border-color: transparent; " +
+                            "-fx-border-width: 0;",
+                    TEXT_SECONDARY
+            ));
+            button.setEffect(null);
+        }
+
+        // Hover effects
+        button.setOnMouseEntered(e -> {
+            if (!isActive) {
+                button.setStyle(button.getStyle() + String.format(
+                        "-fx-background-color: %s;",
+                        "#F0F2FF"
+                ));
+            }
+        });
+
+        button.setOnMouseExited(e -> {
+            setNavButtonStyle(button, isActive);
+        });
+    }
+
+    private void addSectionShadows(VBox sidebar, HBox topBar) {
+        // Sidebar shadow
+        DropShadow sidebarShadow = new DropShadow();
+        sidebarShadow.setColor(Color.rgb(0, 0, 0, 0.08));
+        sidebarShadow.setOffsetX(2);
+        sidebarShadow.setOffsetY(0);
+        sidebarShadow.setRadius(8);
+        sidebar.setEffect(sidebarShadow);
+
+        // Top bar shadow
+        DropShadow topBarShadow = new DropShadow();
+        topBarShadow.setColor(Color.rgb(0, 0, 0, 0.06));
+        topBarShadow.setOffsetX(0);
+        topBarShadow.setOffsetY(2);
+        topBarShadow.setRadius(6);
+        topBar.setEffect(topBarShadow);
+    }
+
+    private void setupNavigation() {
+        // Find all navigation buttons
+        VBox sidebar = (VBox) getLeft();
+
+        // Add click handlers and manage active states
+        sidebar.lookupAll(".button").forEach(node -> {
+            if (node instanceof Button btn && btn.getUserData() != null) {
+                btn.setOnAction(e -> {
+                    String route = (String) btn.getUserData();
+                    navigateToRoute(route, btn);
+                });
+            }
+        });
+    }
+
+    private void navigateToRoute(String route, Button clickedButton) {
+        // Update active button state
+        if (activeNavBtn != null) {
+            setNavButtonStyle(activeNavBtn, false);
+        }
+
+        activeNavBtn = clickedButton;
+        setNavButtonStyle(activeNavBtn, true);
+
+        // Navigate using router
+        switch (route) {
+            case "notes" -> router.navigate("folders");
+            case "favorites" -> router.navigate("favorites");
+            case "todos" -> router.navigate("todos");
+            case "profile" -> router.navigate("profile");
+        }
+    }
+
+    public StackPane outlet() {
+        return outlet;
+    }
 }
