@@ -27,7 +27,7 @@ public class LoginPage {
         heroBox.setPadding(new Insets(24, 48, 24, 48));
 
         try {
-            var img = new Image(getClass().getResourceAsStream("ui/hero.png"), 420, 0, true, true);
+            var img = new Image(getClass().getResourceAsStream("/ui/hero.png"), 420, 0, true, true);
             heroBox.getChildren().add(new ImageView(img));
         } catch (Exception ignored) {}
 
