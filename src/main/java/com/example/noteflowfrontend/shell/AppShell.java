@@ -27,31 +27,37 @@ public class AppShell extends BorderPane {
     public final Router router = new Router(outlet);
 
 
+    private VBox sidebar;   // <— was local
+    private HBox topBar;    // <— was local
+
     private Button activeNavBtn = null;
 
-    public AppShell() {
+    public  AppShell() {
         setPrefSize(1200, 800);
         getStyleClass().add("app-shell");
 
-        //  sidebar
-        VBox sidebar = createSidebar();
+        // use fields instead of locals
+        sidebar = createSidebar();
+        topBar  = createTopBar();
 
-        //  top bar
-        HBox topBar = createTopBar();
-
-        // Content area with subtle background
         outlet.setStyle("-fx-background-color: #FAFBFF;");
-
-        // Add subtle shadow between sections
         addSectionShadows(sidebar, topBar);
 
         setLeft(sidebar);
         setTop(topBar);
         setCenter(outlet);
 
-        // Set up navigation
         setupNavigation();
     }
+
+    // NEW: show/hide side/top chrome
+    public void setChromeVisible(boolean visible) {
+        sidebar.setVisible(visible);
+        sidebar.setManaged(visible);
+        topBar.setVisible(visible);
+        topBar.setManaged(visible);
+    }
+
 
     private VBox createSidebar() {
         VBox sidebar = new VBox();
