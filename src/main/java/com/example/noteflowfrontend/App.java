@@ -6,12 +6,14 @@ import com.example.noteflowfrontend.pages.*;
 import com.example.noteflowfrontend.shell.AppShell;
 import javafx.application.Application;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
 public class App extends Application {
     @Override
     public void start(Stage stage) {
         AppShell shell = new AppShell();
+        Image icon = new Image(getClass().getResourceAsStream("/icon.png"));
 
         // --- AUTH ROUTES (NO SIDEBAR/TOPBAR)
         shell.router.mount("login", () -> {
@@ -54,6 +56,7 @@ public class App extends Application {
         shell.router.navigate("login");     // or "signup"
 
         stage.setTitle("NoteFlow");
+        stage.getIcons().add(icon);
         stage.setScene(new Scene(shell, 1120, 720));
         stage.show();
     }
