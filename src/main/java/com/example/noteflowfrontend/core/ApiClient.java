@@ -12,8 +12,10 @@ public class ApiClient {
     private static String BASE = "http://localhost:8080/api";
     private static final HttpClient http = HttpClient.newBuilder()
             .cookieHandler(new CookieManager()).build();
-    private static final ObjectMapper mapper = new ObjectMapper()
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+    // Use the configured ObjectMapper from JacksonConfig
+    private static final ObjectMapper mapper = JacksonConfig.getObjectMapper();
+
     private static String bearer;
 
     public static void setBearer(String token) {
