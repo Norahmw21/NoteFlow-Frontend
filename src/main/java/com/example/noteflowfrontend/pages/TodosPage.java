@@ -1,6 +1,7 @@
 package com.example.noteflowfrontend.pages;
 
 import com.example.noteflowfrontend.core.ApiClient;
+import com.example.noteflowfrontend.core.JwtUtil;
 import com.example.noteflowfrontend.core.dto.ToDoListDto;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -56,7 +57,6 @@ public class TodosPage extends VBox {
         TableColumn<ToDoListDto, String> importanceCol = new TableColumn<>("Importance");
         importanceCol.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(c.getValue().getTaskImportance()));
 
-        // Add date columns to see what's coming from backend
         TableColumn<ToDoListDto, String> startDateCol = new TableColumn<>("Start Date");
         startDateCol.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(
                 c.getValue().getStartDate() != null ? c.getValue().getStartDate().toString() : ""));
@@ -73,7 +73,7 @@ public class TodosPage extends VBox {
     private void initializeForm() {
         taskNameField.setPromptText("Task Name");
 
-        statusBox.getItems().addAll("PENDING", "IN_PROGRESS", "DONE");
+        statusBox.getItems().addAll("active", "closed");
         statusBox.setPromptText("Select Status");
 
         startDatePicker.setPromptText("Start Date");
@@ -116,34 +116,33 @@ public class TodosPage extends VBox {
                 showError("Task name is required");
                 return;
             }
-
             if (statusBox.getValue() == null) {
                 showError("Status is required");
                 return;
             }
-
             if (importanceBox.getValue() == null) {
                 showError("Importance is required");
                 return;
             }
 
-            // Convert LocalDate to LocalDateTime
-            LocalDateTime startDateTime = startDatePicker.getValue() != null ?
-                    startDatePicker.getValue().atStartOfDay() : null;
-            LocalDateTime endDateTime = endDatePicker.getValue() != null ?
-                    endDatePicker.getValue().atStartOfDay() : null;
+            Long uid = JwtUtil.extractUserIdFromBearer();
+            if (uid == null) {
+                showError("You are not logged in (no userId in JWT).");
+                return;
+            }
 
-            ToDoListDto dto = new ToDoListDto(
-                    null,
-                    taskNameField.getText(),
-                    statusBox.getValue(),
-                    startDateTime,  // Now passing LocalDateTime
-                    endDateTime,    // Now passing LocalDateTime
-                    importanceBox.getValue(),
-                    null
-            );
+            LocalDateTime startDateTime = startDatePicker.getValue() != null ? startDatePicker.getValue().atStartOfDay() : null;
+            LocalDateTime endDateTime = endDatePicker.getValue() != null ? endDatePicker.getValue().atStartOfDay() : null;
 
-            ToDoListDto created = ApiClient.post("/todo", dto, ToDoListDto.class);
+            var payload = new java.util.HashMap<String, Object>();
+            payload.put("taskName", taskNameField.getText());
+            payload.put("status", statusBox.getValue());
+            payload.put("startDate", startDateTime);
+            payload.put("endDate", endDateTime);
+            payload.put("taskImportance", importanceBox.getValue());
+            payload.put("user", java.util.Map.of("userId", uid));
+
+            ToDoListDto created = ApiClient.post("/todo", payload, ToDoListDto.class);
             tasks.add(created);
             clearForm();
 
@@ -165,31 +164,33 @@ public class TodosPage extends VBox {
                 showError("Task name is required");
                 return;
             }
-
             if (statusBox.getValue() == null) {
                 showError("Status is required");
                 return;
             }
-
             if (importanceBox.getValue() == null) {
                 showError("Importance is required");
                 return;
             }
 
-            // Convert LocalDate to LocalDateTime
-            LocalDateTime startDateTime = startDatePicker.getValue() != null ?
-                    startDatePicker.getValue().atStartOfDay() : null;
-            LocalDateTime endDateTime = endDatePicker.getValue() != null ?
-                    endDatePicker.getValue().atStartOfDay() : null;
+            Long uid = JwtUtil.extractUserIdFromBearer();
+            if (uid == null) {
+                showError("You are not logged in (no userId in JWT).");
+                return;
+            }
 
-            // Update the selected DTO
-            selected.setTaskName(taskNameField.getText());
-            selected.setStatus(statusBox.getValue());
-            selected.setStartDate(startDateTime);  // Now passing LocalDateTime
-            selected.setEndDate(endDateTime);      // Now passing LocalDateTime
-            selected.setTaskImportance(importanceBox.getValue());
+            LocalDateTime startDateTime = startDatePicker.getValue() != null ? startDatePicker.getValue().atStartOfDay() : null;
+            LocalDateTime endDateTime = endDatePicker.getValue() != null ? endDatePicker.getValue().atStartOfDay() : null;
 
-            ToDoListDto updated = ApiClient.put("/todo/" + selected.getTaskId(), selected, ToDoListDto.class);
+            var payload = new java.util.HashMap<String, Object>();
+            payload.put("taskName", taskNameField.getText());
+            payload.put("status", statusBox.getValue());
+            payload.put("startDate", startDateTime);
+            payload.put("endDate", endDateTime);
+            payload.put("taskImportance", importanceBox.getValue());
+            payload.put("user", java.util.Map.of("userId", uid));
+
+            ToDoListDto updated = ApiClient.put("/todo/" + selected.getTaskId(), payload, ToDoListDto.class);
             int index = tasks.indexOf(selected);
             tasks.set(index, updated);
             clearForm();
@@ -199,6 +200,7 @@ public class TodosPage extends VBox {
             ex.printStackTrace();
         }
     }
+
 
     private void handleDeleteTask() {
         ToDoListDto selected = table.getSelectionModel().getSelectedItem();
@@ -214,8 +216,13 @@ public class TodosPage extends VBox {
             confirm.showAndWait().ifPresent(response -> {
                 if (response == ButtonType.YES) {
                     try {
-                        // Pass Void.class as the second parameter
-                        ApiClient.delete("/todo/" + selected.getTaskId(), Void.class);
+                        Long uid = JwtUtil.extractUserIdFromBearer();
+                        if (uid == null) {
+                            showError("You are not logged in (no userId in JWT).");
+                            return;
+                        }
+
+                        ApiClient.delete("/todo/" + selected.getTaskId() + "?userId=" + uid, Void.class);
                         tasks.remove(selected);
                         clearForm();
                     } catch (Exception ex) {
@@ -229,6 +236,7 @@ public class TodosPage extends VBox {
             ex.printStackTrace();
         }
     }
+
 
     private void populateForm(ToDoListDto task) {
         taskNameField.setText(task.getTaskName() != null ? task.getTaskName() : "");
@@ -261,19 +269,21 @@ public class TodosPage extends VBox {
 
     private void loadTasks() {
         try {
-            // First, let's debug what we're getting from the backend
             System.out.println("Attempting to load tasks...");
 
-            ToDoListDto[] all = ApiClient.get("/todo", ToDoListDto[].class);
-            System.out.println("Successfully loaded " + all.length + " tasks");
+            Long uid = JwtUtil.extractUserIdFromBearer();
+            if (uid == null) {
+                showError("You are not logged in (no userId in JWT).");
+                return;
+            }
 
-            // Debug: print each task to see the date format
+            ToDoListDto[] all = ApiClient.get("/todo/user/" + uid, ToDoListDto[].class);
+            System.out.println("Successfully loaded " + all.length + " tasks");
             for (ToDoListDto task : all) {
                 System.out.println("Task: " + task.getTaskName() +
                         ", Start: " + task.getStartDate() +
                         ", End: " + task.getEndDate());
             }
-
             tasks.setAll(all);
 
         } catch (Exception e) {
@@ -282,6 +292,7 @@ public class TodosPage extends VBox {
             showError("Error loading tasks: " + e.getMessage());
         }
     }
+
 
     private void showError(String msg) {
         Alert alert = new Alert(Alert.AlertType.ERROR, msg, ButtonType.OK);
