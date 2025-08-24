@@ -1,6 +1,7 @@
 package com.example.noteflowfrontend.pages;
 
 import com.example.noteflowfrontend.core.ApiClient;
+import com.example.noteflowfrontend.core.JwtUtil;
 import com.example.noteflowfrontend.core.dto.UserProfileDto;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -33,8 +34,7 @@ public class ProfilePage extends BorderPane {
     private String lastAvatarUrl = "";
     private String lastPhone = "";
 
-    // For now we test without session: ?userId=1
-    private static final String QS = "?userId=1";
+
 
     public ProfilePage() {
         getStyleClass().add("profile-page");
@@ -264,7 +264,11 @@ public class ProfilePage extends BorderPane {
 
         new Thread(() -> {
             try {
-                UserProfileDto dto = ApiClient.get("/me" + QS, UserProfileDto.class);
+                Long uid = JwtUtil.extractUserIdFromBearer();
+                if (uid == null) throw new RuntimeException("No userId in token");
+
+                UserProfileDto dto = ApiClient.get("/users/" + uid, UserProfileDto.class);
+
                 Platform.runLater(() -> {
                     username.setText(dto.username());
                     email.setText(dto.email());
@@ -282,17 +286,21 @@ public class ProfilePage extends BorderPane {
             } catch (Exception ex) {
                 Platform.runLater(() -> {
                     setLoadingState(false);
-                    showAlert(Alert.AlertType.ERROR, "Load Error", "Failed to load profile: " + ex.getMessage());
+                    showAlert(Alert.AlertType.ERROR, "Load Error",
+                            "Failed to load profile: " + ex.getMessage());
                 });
             }
         }).start();
     }
+
 
     private void saveProfile() {
         String url = avatarUrl.getText().trim();
         String ph = phone.getText().trim();
 
         Map<String, Object> body = new HashMap<>();
+        body.put("username", username.getText());
+        body.put("email", email.getText());
         body.put("avatarUrl", url.isBlank() ? null : url);
         body.put("phone", ph.isBlank() ? null : ph);
 
@@ -300,7 +308,11 @@ public class ProfilePage extends BorderPane {
 
         new Thread(() -> {
             try {
-                UserProfileDto dto = ApiClient.put("/me" + QS, body, UserProfileDto.class);
+                Long uid = JwtUtil.extractUserIdFromBearer();
+                if (uid == null) throw new RuntimeException("No userId in token");
+
+                UserProfileDto dto = ApiClient.put("/users/" + uid, body, UserProfileDto.class);
+
                 Platform.runLater(() -> {
                     lastAvatarUrl = dto.avatarUrl() == null ? "" : dto.avatarUrl();
                     lastPhone = dto.phone() == null ? "" : dto.phone();

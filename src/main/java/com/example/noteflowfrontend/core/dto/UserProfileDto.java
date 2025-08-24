@@ -1,4 +1,14 @@
 package com.example.noteflowfrontend.core.dto;
 
-public record UserProfileDto(Long id, String username, String email, String avatarUrl, String phone) {}
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
+public record UserProfileDto(
+        @JsonAlias({"userId", "id"}) Long id,
+        String username,
+        String email,
+        String avatarUrl,
+        String phone
+) {
+}

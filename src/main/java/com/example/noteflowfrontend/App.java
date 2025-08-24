@@ -40,6 +40,10 @@ public class App extends Application {
             shell.setChromeVisible(true);
             return new ProfilePage();
         });
+        shell.router.mount("gpa-calculator", () -> {
+            shell.setChromeVisible(true);
+            return new GpaCalculatorPage();
+        });
 
         // first screen (choose one)
         shell.router.navigate("login");     // or "signup"

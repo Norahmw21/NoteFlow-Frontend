@@ -27,8 +27,8 @@ public class AppShell extends BorderPane {
     public final Router router = new Router(outlet);
 
 
-    private VBox sidebar;   // <— was local
-    private HBox topBar;    // <— was local
+    private VBox sidebar;
+    private HBox topBar;
 
     private Button activeNavBtn = null;
 
@@ -36,7 +36,6 @@ public class AppShell extends BorderPane {
         setPrefSize(1200, 800);
         getStyleClass().add("app-shell");
 
-        // use fields instead of locals
         sidebar = createSidebar();
         topBar  = createTopBar();
 
@@ -50,7 +49,6 @@ public class AppShell extends BorderPane {
         setupNavigation();
     }
 
-    // NEW: show/hide side/top chrome
     public void setChromeVisible(boolean visible) {
         sidebar.setVisible(visible);
         sidebar.setManaged(visible);
@@ -106,8 +104,10 @@ public class AppShell extends BorderPane {
         Button btnNotes = createNavButton("📝", "My Notes", "notes");
         Button btnFav = createNavButton("⭐", "Favorites", "favorites");
         Button btnTodos = createNavButton("✅", "To-Do", "todos");
+        Button btnGpa = createNavButton("\uD83D\uDDA9", "GPA Calculator", "gpa-calculator");
 
-        navSection.getChildren().addAll(navTitle, btnNotes, btnFav, btnTodos);
+
+        navSection.getChildren().addAll(navTitle, btnNotes, btnFav, btnTodos,btnGpa);
 
         // Account section
         VBox accountSection = new VBox(4);
@@ -335,6 +335,8 @@ public class AppShell extends BorderPane {
             case "favorites" -> router.navigate("favorites");
             case "todos" -> router.navigate("todos");
             case "profile" -> router.navigate("profile");
+            case "gpa-calculator" -> router.navigate("gpa-calculator");
+
         }
     }
 

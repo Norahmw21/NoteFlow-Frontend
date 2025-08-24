@@ -15,6 +15,8 @@ public class ApiClient {
     private static String bearer;
     public static void setBearer(String token) { bearer = token; }
     public static void clearBearer() { bearer = null; }
+    public static String getBearer() { return bearer; }
+
 
     private static HttpRequest.Builder base(URI uri) {
         var b = HttpRequest.newBuilder(uri);
