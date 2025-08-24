@@ -1,16 +1,17 @@
 package com.example.noteflowfrontend.shell;
 
+import com.example.noteflowfrontend.core.Auth;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.paint.Color;
+
+import java.util.Optional;
 
 
 public class AppShell extends BorderPane {
@@ -32,12 +33,12 @@ public class AppShell extends BorderPane {
 
     private Button activeNavBtn = null;
 
-    public  AppShell() {
+    public AppShell() {
         setPrefSize(1200, 800);
         getStyleClass().add("app-shell");
 
         sidebar = createSidebar();
-        topBar  = createTopBar();
+        topBar = createTopBar();
 
         outlet.setStyle("-fx-background-color: #FAFBFF;");
         addSectionShadows(sidebar, topBar);
@@ -108,7 +109,7 @@ public class AppShell extends BorderPane {
         Button btnTrash = createNavButton("🗑️", "Trash", "trash");
 
 
-        navSection.getChildren().addAll(navTitle, btnNotes, btnFav, btnTodos,btnGpa,btnTrash);
+        navSection.getChildren().addAll(navTitle, btnNotes, btnFav, btnTodos, btnGpa, btnTrash);
 
         // Account section
         VBox accountSection = new VBox(4);
@@ -122,8 +123,19 @@ public class AppShell extends BorderPane {
         ));
 
         Button btnProfile = createNavButton("👤", "Profile", "profile");
+        Button btnLogout = new Button("Log out");
+        btnLogout.setMaxWidth(Double.MAX_VALUE);
+        btnLogout.setStyle(
+                "-fx-background-color: transparent;" +
+                        "-fx-border-color: #F54927;" +
+                        "-fx-border-width: 2px;" +
+                        "-fx-border-radius: 5px;" +
+                        "-fx-text-fill: #F54927;"
+        );
+        btnLogout.setOnAction(e -> doLogout());
 
-        accountSection.getChildren().addAll(accountTitle, btnProfile);
+
+        accountSection.getChildren().addAll(accountTitle, btnProfile, btnLogout);
 
         // Add flexible spacer
         Region spacer = new Region();
@@ -166,46 +178,7 @@ public class AppShell extends BorderPane {
         Region grow = new Region();
         HBox.setHgrow(grow, Priority.ALWAYS);
 
-        // Enhanced search section
-        HBox searchSection = new HBox(8);
-        searchSection.setAlignment(Pos.CENTER_RIGHT);
-
-        TextField searchField = new TextField();
-        searchField.setPromptText("Search notes, todos...");
-        searchField.setPrefWidth(280);
-        searchField.setStyle(String.format(
-                "-fx-background-color: %s; " +
-                        "-fx-border-color: %s; " +
-                        "-fx-border-radius: 8; " +
-                        "-fx-background-radius: 8; " +
-                        "-fx-padding: 10 16 10 40; " +
-                        "-fx-font-size: 13; " +
-                        "-fx-prompt-text-fill: %s;",
-                CARD_BG, BORDER_COLOR, TEXT_SECONDARY
-        ));
-
-        // Search icon
-        Label searchIcon = new Label("🔍");
-        searchIcon.setStyle(String.format(
-                "-fx-font-size: 14; -fx-text-fill: %s; " +
-                        "-fx-translate-x: 28; -fx-translate-y: 0;",
-                TEXT_SECONDARY
-        ));
-
-        StackPane searchContainer = new StackPane();
-        searchContainer.getChildren().addAll(searchField, searchIcon);
-        searchContainer.setAlignment(Pos.CENTER_LEFT);
-
-        // Add subtle shadow to search
-        DropShadow searchShadow = new DropShadow();
-        searchShadow.setColor(Color.rgb(0, 0, 0, 0.05));
-        searchShadow.setOffsetY(1);
-        searchShadow.setRadius(2);
-        searchContainer.setEffect(searchShadow);
-
-        searchSection.getChildren().add(searchContainer);
-
-        topBar.getChildren().addAll(welcomeSection, grow, searchSection);
+        topBar.getChildren().addAll(welcomeSection, grow);
 
         return topBar;
     }
@@ -305,6 +278,23 @@ public class AppShell extends BorderPane {
         topBarShadow.setRadius(6);
         topBar.setEffect(topBarShadow);
     }
+
+    private void doLogout() {
+
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Log out");
+        confirm.setHeaderText(null);
+        confirm.setContentText("Are you sure you want to log out?");
+        Optional<ButtonType> res = confirm.showAndWait();
+        if (res.isEmpty() || res.get() != ButtonType.OK) return;
+
+        Auth.logout();
+        activeNavBtn = null;
+        outlet.getChildren().clear();
+
+        router.navigate("login");
+    }
+
 
     private void setupNavigation() {
         // Find all navigation buttons
