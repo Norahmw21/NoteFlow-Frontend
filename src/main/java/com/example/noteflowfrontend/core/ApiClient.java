@@ -8,7 +8,7 @@ import java.net.CookieManager;
 import java.net.http.*;
 
 public class ApiClient {
-    private static String BASE = "http://localhost:8082/api";
+    private static String BASE = "http://localhost:8080/api";
     private static final HttpClient http = HttpClient.newBuilder()
             .cookieHandler(new CookieManager()).build();
     private static final ObjectMapper mapper = new ObjectMapper()
