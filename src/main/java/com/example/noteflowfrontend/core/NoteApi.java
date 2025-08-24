@@ -9,19 +9,59 @@ import java.util.Map;
 
 public class NoteApi {
 
-    private static String base(long userId) { return "/users/" + userId + "/notes"; }
+    /**
+     * Cached user ID to prevent repeated lookups within a session.
+     * It's volatile to ensure visibility across threads, though the synchronized uid() method also guarantees this.
+     */
+    private static volatile Long cachedUserId = null;
 
-    /** Resolve userId directly from JWT; fallback to /api/me if token lacks numeric id. */
-    private static long uid() throws Exception {
+    private static String base(long userId) {
+        return "/users/" + userId + "/notes";
+    }
+
+    /**
+     * Resolves the user ID from the JWT or the /api/me endpoint, with caching.
+     * This method is synchronized to ensure that in a multi-threaded scenario,
+     * the lookup is only performed once.
+     *
+     * @return The user's ID.
+     * @throws Exception if the user ID cannot be resolved.
+     */
+    private static synchronized long uid() throws Exception {
+        // 1. Return the cached ID if it's already available.
+        if (cachedUserId != null) {
+            return cachedUserId;
+        }
+
+        // 2. If not cached, try to extract it from the JWT.
         Long fromJwt = JwtUtil.extractUserIdFromBearer();
-        if (fromJwt != null) return fromJwt;
+        if (fromJwt != null) {
+            cachedUserId = fromJwt; // Cache the ID.
+            return cachedUserId;
+        }
 
-        // Fallback: ask backend who I am (returns { id, username, email, ... })
+        // 3. Fallback: ask the backend who the current user is.
         Map me = ApiClient.get("/me", Map.class);
         Object id = (me == null) ? null : me.get("id");
-        if (id == null) throw new IllegalStateException("Unable to resolve user id from JWT or /api/me");
-        return Long.parseLong(String.valueOf(id));
+        if (id == null) {
+            throw new IllegalStateException("Unable to resolve user id from JWT or /api/me");
+        }
+
+        // 4. Parse and cache the ID from the API response.
+        cachedUserId = Long.parseLong(String.valueOf(id));
+        return cachedUserId;
     }
+
+    /**
+     * Clears the cached user ID. This should be called when the user logs out
+     * to ensure the next user doesn't inadvertently use the previous user's ID.
+     */
+    public static void clearCache() {
+        cachedUserId = null;
+        // It's also a good practice to clear the JWT token itself from its storage location.
+        // For example: JwtUtil.clearToken();
+    }
+
 
     // ================= Lists =================
     public static List<NoteDto> list() throws Exception {
@@ -29,11 +69,13 @@ public class NoteApi {
         NoteDto[] arr = ApiClient.get(base(userId), NoteDto[].class);
         return Arrays.asList(arr);
     }
+
     public static List<NoteDto> listFavorites() throws Exception {
         long userId = uid();
         NoteDto[] arr = ApiClient.get(base(userId) + "/favorites", NoteDto[].class);
         return Arrays.asList(arr);
     }
+
     public static List<NoteDto> listTrash() throws Exception {
         long userId = uid();
         NoteDto[] arr = ApiClient.get(base(userId) + "/trash", NoteDto[].class);
@@ -46,12 +88,11 @@ public class NoteApi {
     }
 
     // ================= Create / Update =================
-    /** Your backend Note entity uses title, textHtml, drawingJson — send exactly those. */
     public static NoteDto create(String title, String textHtml, String drawingJson) throws Exception {
         long userId = uid();
         Map<String, Object> body = new HashMap<>();
         body.put("title", (title == null || title.isBlank()) ? "Untitled" : title);
-        body.put("textHtml",    textHtml);
+        body.put("textHtml", textHtml);
         body.put("drawingJson", drawingJson);
         return ApiClient.post(base(userId), body, NoteDto.class);
     }
@@ -59,9 +100,9 @@ public class NoteApi {
     public static NoteDto update(long id, String title, String textHtml, String drawingJson) throws Exception {
         long userId = uid();
         Map<String, Object> body = new HashMap<>();
-        body.put("title",        title);
-        body.put("textHtml",     textHtml);
-        body.put("drawingJson",  drawingJson);
+        body.put("title", title);
+        body.put("textHtml", textHtml);
+        body.put("drawingJson", drawingJson);
         return ApiClient.put(base(userId) + "/" + id, body, NoteDto.class);
     }
 
