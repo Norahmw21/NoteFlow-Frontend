@@ -12,11 +12,13 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.scene.effect.DropShadow;
+import javafx.scene.shape.Rectangle;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-public class TodosPage extends VBox {
+public class TodosPage extends BorderPane {
 
     private final ObservableList<ToDoListDto> tasks = FXCollections.observableArrayList();
     private final TableView<ToDoListDto> table = new TableView<>();
@@ -28,35 +30,31 @@ public class TodosPage extends VBox {
     private final DatePicker endDatePicker = new DatePicker();
     private final ComboBox<String> importanceBox = new ComboBox<>();
 
-    // Colors
-    private final String primaryColor = "#4623E9";
-    private final String secondaryColor = "#EAABF0";
-    private final String accentColor = "#DABFFF";
-    private final String backgroundColor = "#F5F5F5";
-    private final String textColor = "#333333";
+    // Modern color palette
+    private final String primaryColor = "#667eea";
+    private final String backgroundColor = "#f8fafc";
+    private final String cardBackgroundColor = "#ffffff";
+    private final String textColor = "#1a202c";
+    private final String subtleTextColor = "#718096";
+    private final String borderColor = "#e2e8f0";
+
+    // Status colors
+    private final String activeColor = "#48bb78";
+    private final String closedColor = "#f56565";
 
     // Importance colors
-    private final String highImportanceColor = "#FF5252";  // Red
-    private final String normalImportanceColor = "#4CAF50"; // Green
-    private final String lowImportanceColor = "#2196F3";   // Blue
+    private final String highImportanceColor = "#e53e3e";
+    private final String normalImportanceColor = "#38b2ac";
+    private final String lowImportanceColor = "#4299e1";
 
     public TodosPage() {
-        super(10);
-        setPadding(new Insets(15));
         setStyle("-fx-background-color: " + backgroundColor + ";");
+        setPadding(new Insets(24));
 
-        // Header
-        Label headerLabel = new Label("My Tasks");
-        headerLabel.setFont(Font.font("System", FontWeight.BOLD, 24));
-        headerLabel.setTextFill(Color.web(primaryColor));
-        headerLabel.setPadding(new Insets(0, 0, 15, 0));
-
+        initializeLayout();
         initializeTable();
         initializeForm();
 
-        getChildren().addAll(headerLabel, table, createFormLayout());
-
-        // Add selection listener
         table.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null) {
                 populateForm(newVal);
@@ -66,115 +64,465 @@ public class TodosPage extends VBox {
         loadTasks();
     }
 
-    private void initializeTable() {
-        table.setStyle("-fx-background-color: white; -fx-background-radius: 10; -fx-border-radius: 10;");
-        table.setPadding(new Insets(10));
+    private void initializeLayout() {
+        // Header Section
+        VBox headerSection = createHeaderSection();
 
-        TableColumn<ToDoListDto, Long> idCol = new TableColumn<>("ID");
-        idCol.setCellValueFactory(c -> new javafx.beans.property.SimpleObjectProperty<>(c.getValue().getTaskId()));
-        idCol.setVisible(false); // Hide ID column as it's not needed for display
+        // Main Content Area
+        VBox mainContent = new VBox(20);
+        mainContent.setPadding(new Insets(0));
 
-        TableColumn<ToDoListDto, String> nameCol = new TableColumn<>("Task");
-        nameCol.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(c.getValue().getTaskName()));
-        nameCol.setMinWidth(200);
+        // Table Container
+        VBox tableContainer = createTableContainer();
 
-        TableColumn<ToDoListDto, String> statusCol = new TableColumn<>("Status");
-        statusCol.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(c.getValue().getStatus()));
-        statusCol.setMinWidth(100);
-        statusCol.setCellFactory(column -> new TableCell<ToDoListDto, String>() {
-            @Override
-            protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                if (item == null || empty) {
-                    setText(null);
-                    setStyle("");
-                } else {
-                    setText(item.toUpperCase());
-                    if ("active".equalsIgnoreCase(item)) {
-                        setStyle("-fx-background-color: #E8F5E9; -fx-background-radius: 10; -fx-border-radius: 10; -fx-text-fill: #388E3C; -fx-alignment: CENTER; -fx-font-weight: bold;");
-                    } else {
-                        setStyle("-fx-background-color: #FFEBEE; -fx-background-radius: 10; -fx-border-radius: 10; -fx-text-fill: #D32F2F; -fx-alignment: CENTER; -fx-font-weight: bold;");
-                    }
-                }
-            }
-        });
+        // Form Container
+        VBox formContainer = createFormContainer();
 
-        TableColumn<ToDoListDto, String> importanceCol = new TableColumn<>("Importance");
-        importanceCol.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(c.getValue().getTaskImportance()));
-        importanceCol.setMinWidth(120);
-        importanceCol.setCellFactory(column -> new TableCell<ToDoListDto, String>() {
-            @Override
-            protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                if (item == null || empty) {
-                    setText(null);
-                    setStyle("");
-                } else {
-                    setText(item.toUpperCase());
-                    switch (item.toLowerCase()) {
-                        case "high":
-                            setStyle("-fx-background-color: " + highImportanceColor + "; -fx-background-radius: 10; -fx-border-radius: 10; -fx-text-fill: white; -fx-alignment: CENTER; -fx-font-weight: bold;");
-                            break;
-                        case "normal":
-                            setStyle("-fx-background-color: " + normalImportanceColor + "; -fx-background-radius: 10; -fx-border-radius: 10; -fx-text-fill: white; -fx-alignment: CENTER; -fx-font-weight: bold;");
-                            break;
-                        case "low":
-                            setStyle("-fx-background-color: " + lowImportanceColor + "; -fx-background-radius: 10; -fx-border-radius: 10; -fx-text-fill: white; -fx-alignment: CENTER; -fx-font-weight: bold;");
-                            break;
-                        default:
-                            setStyle("");
-                    }
-                }
-            }
-        });
+        mainContent.getChildren().addAll(tableContainer, formContainer);
 
-        TableColumn<ToDoListDto, String> startDateCol = new TableColumn<>("Start Date");
-        startDateCol.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(
-                c.getValue().getStartDate() != null ? c.getValue().getStartDate().toLocalDate().toString() : ""));
-        startDateCol.setMinWidth(100);
+        setTop(headerSection);
+        setCenter(mainContent);
+    }
 
-        TableColumn<ToDoListDto, String> endDateCol = new TableColumn<>("End Date");
-        endDateCol.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(
-                c.getValue().getEndDate() != null ? c.getValue().getEndDate().toLocalDate().toString() : ""));
-        endDateCol.setMinWidth(100);
+    private VBox createHeaderSection() {
+        VBox headerBox = new VBox(8);
+        headerBox.setPadding(new Insets(0, 0, 24, 0));
 
-        table.getColumns().addAll(idCol, nameCol, statusCol, importanceCol, startDateCol, endDateCol);
-        table.setItems(tasks);
-        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        Label titleLabel = new Label("Task Manager");
+        titleLabel.setFont(Font.font("System", FontWeight.BOLD, 32));
+        titleLabel.setTextFill(Color.web(textColor));
 
-        // Set row factory to add some padding between rows
-        table.setRowFactory(tv -> new TableRow<ToDoListDto>() {
-            @Override
-            protected void updateItem(ToDoListDto item, boolean empty) {
-                super.updateItem(item, empty);
-                if (item != null && !empty) {
-                    setStyle("-fx-border-color: transparent transparent #EEEEEE transparent; -fx-padding: 5 0 5 0;");
-                } else {
-                    setStyle("");
-                }
+        Label subtitleLabel = new Label("Organize and manage your daily tasks");
+        subtitleLabel.setFont(Font.font("System", FontWeight.NORMAL, 16));
+        subtitleLabel.setTextFill(Color.web(subtleTextColor));
+
+        headerBox.getChildren().addAll(titleLabel, subtitleLabel);
+        return headerBox;
+    }
+
+    private VBox createTableContainer() {
+        VBox container = new VBox(16);
+
+        // Table header with actions
+        HBox tableHeader = new HBox(12);
+        tableHeader.setAlignment(Pos.CENTER_LEFT);
+
+        Label tasksLabel = new Label("Your Tasks");
+        tasksLabel.setFont(Font.font("System", FontWeight.BOLD, 20));
+        tasksLabel.setTextFill(Color.web(textColor));
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        Button refreshBtn = createModernButton("🔄 Refresh", "#718096", false);
+        refreshBtn.setOnAction(e -> loadTasks());
+
+        tableHeader.getChildren().addAll(tasksLabel, spacer, refreshBtn);
+
+        // Table wrapper with shadow
+        StackPane tableWrapper = new StackPane();
+        tableWrapper.setStyle(
+                "-fx-background-color: " + cardBackgroundColor + ";" +
+                        "-fx-background-radius: 12;" +
+                        "-fx-border-radius: 12;" +
+                        "-fx-border-color: " + borderColor + ";" +
+                        "-fx-border-width: 1;"
+        );
+
+        // Add subtle shadow
+        DropShadow shadow = new DropShadow();
+        shadow.setRadius(8);
+        shadow.setOffsetX(0);
+        shadow.setOffsetY(2);
+        shadow.setColor(Color.color(0, 0, 0, 0.1));
+        tableWrapper.setEffect(shadow);
+
+        tableWrapper.getChildren().add(table);
+
+        container.getChildren().addAll(tableHeader, tableWrapper);
+        return container;
+    }
+
+    private VBox createFormContainer() {
+        VBox container = new VBox(16);
+
+        Label formLabel = new Label("Add or Edit Task");
+        formLabel.setFont(Font.font("System", FontWeight.BOLD, 20));
+        formLabel.setTextFill(Color.web(textColor));
+
+        // Form wrapper with modern styling
+        VBox formWrapper = new VBox(20);
+        formWrapper.setStyle(
+                "-fx-background-color: " + cardBackgroundColor + ";" +
+                        "-fx-background-radius: 12;" +
+                        "-fx-border-radius: 12;" +
+                        "-fx-border-color: " + borderColor + ";" +
+                        "-fx-border-width: 1;" +
+                        "-fx-padding: 24;"
+        );
+
+        DropShadow shadow = new DropShadow();
+        shadow.setRadius(8);
+        shadow.setOffsetX(0);
+        shadow.setOffsetY(2);
+        shadow.setColor(Color.color(0, 0, 0, 0.1));
+        formWrapper.setEffect(shadow);
+
+        // Form fields grid
+        GridPane formGrid = createFormGrid();
+
+        // Action buttons
+        HBox buttonBox = createButtonBox();
+
+        formWrapper.getChildren().addAll(formGrid, buttonBox);
+        container.getChildren().addAll(formLabel, formWrapper);
+
+        return container;
+    }
+
+    private GridPane createFormGrid() {
+        GridPane grid = new GridPane();
+        grid.setHgap(16);
+        grid.setVgap(16);
+
+        // Column constraints for responsive layout
+        ColumnConstraints col1 = new ColumnConstraints();
+        col1.setHgrow(Priority.ALWAYS);
+        col1.setMinWidth(200);
+
+        ColumnConstraints col2 = new ColumnConstraints();
+        col2.setHgrow(Priority.ALWAYS);
+        col2.setMinWidth(150);
+
+        ColumnConstraints col3 = new ColumnConstraints();
+        col3.setHgrow(Priority.ALWAYS);
+        col3.setMinWidth(150);
+
+        grid.getColumnConstraints().addAll(col1, col2, col3);
+
+        // Task name (spans 3 columns)
+        VBox taskNameBox = createFieldBox("Task Name", taskNameField);
+        grid.add(taskNameBox, 0, 0, 3, 1);
+
+        // Status and Importance
+        VBox statusBox = createFieldBox("Status", this.statusBox);
+        VBox importanceBoxContainer = createFieldBox("Importance", importanceBox);
+
+        grid.add(statusBox, 0, 1);
+        grid.add(importanceBoxContainer, 1, 1);
+
+        // Date fields
+        VBox startDateBox = createFieldBox("Start Date", startDatePicker);
+        VBox endDateBox = createFieldBox("End Date", endDatePicker);
+
+        grid.add(startDateBox, 0, 2);
+        grid.add(endDateBox, 1, 2);
+
+        return grid;
+    }
+
+    private VBox createFieldBox(String labelText, Control field) {
+        VBox box = new VBox(8);
+
+        Label label = new Label(labelText);
+        label.setFont(Font.font("System", FontWeight.MEDIUM, 14));
+        label.setTextFill(Color.web(textColor));
+
+        styleFormField(field);
+
+        box.getChildren().addAll(label, field);
+        return box;
+    }
+
+    private void styleFormField(Control field) {
+        field.setStyle(
+                "-fx-background-color: " + cardBackgroundColor + ";" +
+                        "-fx-border-color: " + borderColor + ";" +
+                        "-fx-border-width: 1;" +
+                        "-fx-border-radius: 8;" +
+                        "-fx-background-radius: 8;" +
+                        "-fx-padding: 12;" +
+                        "-fx-font-size: 14;"
+        );
+
+        // Focus effects
+        field.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal) {
+                field.setStyle(
+                        "-fx-background-color: " + cardBackgroundColor + ";" +
+                                "-fx-border-color: " + primaryColor + ";" +
+                                "-fx-border-width: 2;" +
+                                "-fx-border-radius: 8;" +
+                                "-fx-background-radius: 8;" +
+                                "-fx-padding: 11;" +
+                                "-fx-font-size: 14;"
+                );
+            } else {
+                field.setStyle(
+                        "-fx-background-color: " + cardBackgroundColor + ";" +
+                                "-fx-border-color: " + borderColor + ";" +
+                                "-fx-border-width: 1;" +
+                                "-fx-border-radius: 8;" +
+                                "-fx-background-radius: 8;" +
+                                "-fx-padding: 12;" +
+                                "-fx-font-size: 14;"
+                );
             }
         });
     }
 
+    private HBox createButtonBox() {
+        HBox buttonBox = new HBox(12);
+        buttonBox.setAlignment(Pos.CENTER_LEFT);
+
+        Button createBtn = createModernButton("✓ Add Task", primaryColor, true);
+        createBtn.setOnAction(e -> handleCreateTask());
+
+        Button updateBtn = createModernButton("✏ Update", "#f093fb", false);
+        updateBtn.setOnAction(e -> handleUpdateTask());
+
+        Button deleteBtn = createModernButton("🗑 Delete", closedColor, false);
+        deleteBtn.setOnAction(e -> handleDeleteTask());
+
+        Button clearBtn = createModernButton("↻ Clear", "#718096", false);
+        clearBtn.setOnAction(e -> clearForm());
+
+        buttonBox.getChildren().addAll(createBtn, updateBtn, deleteBtn, clearBtn);
+        return buttonBox;
+    }
+
+    private void initializeTable() {
+        table.setStyle("-fx-background-color: transparent;");
+        table.setPadding(new Insets(16));
+        table.setRowFactory(tv -> createStyledTableRow());
+
+        // Hide table header
+        table.widthProperty().addListener((obs, oldWidth, newWidth) -> {
+            Pane header = (Pane) table.lookup("TableHeaderRow");
+            if (header != null) {
+                header.setVisible(false);
+                header.setPrefHeight(0);
+                header.setMinHeight(0);
+                header.setMaxHeight(0);
+            }
+        });
+
+        TableColumn<ToDoListDto, Long> idCol = new TableColumn<>("ID");
+        idCol.setCellValueFactory(c -> new javafx.beans.property.SimpleObjectProperty<>(c.getValue().getTaskId()));
+        idCol.setVisible(false);
+
+        TableColumn<ToDoListDto, String> nameCol = new TableColumn<>("Task");
+        nameCol.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(c.getValue().getTaskName()));
+        nameCol.setMinWidth(250);
+        nameCol.setCellFactory(column -> createTaskNameCell());
+
+        TableColumn<ToDoListDto, String> statusCol = new TableColumn<>("Status");
+        statusCol.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(c.getValue().getStatus()));
+        statusCol.setMinWidth(100);
+        statusCol.setCellFactory(column -> createStatusCell());
+
+        TableColumn<ToDoListDto, String> importanceCol = new TableColumn<>("Importance");
+        importanceCol.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(c.getValue().getTaskImportance()));
+        importanceCol.setMinWidth(120);
+        importanceCol.setCellFactory(column -> createImportanceCell());
+
+        TableColumn<ToDoListDto, String> datesCol = new TableColumn<>("Duration");
+        datesCol.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(formatDateRange(c.getValue())));
+        datesCol.setMinWidth(200);
+        datesCol.setCellFactory(column -> createDateCell());
+
+        table.getColumns().addAll(idCol, nameCol, statusCol, importanceCol, datesCol);
+        table.setItems(tasks);
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+    }
+
+    private TableRow<ToDoListDto> createStyledTableRow() {
+        return new TableRow<ToDoListDto>() {
+            @Override
+            protected void updateItem(ToDoListDto item, boolean empty) {
+                super.updateItem(item, empty);
+                if (item != null && !empty) {
+                    setStyle(
+                            "-fx-background-color: transparent;" +
+                                    "-fx-border-color: transparent transparent " + borderColor + " transparent;" +
+                                    "-fx-border-width: 0 0 1 0;" +
+                                    "-fx-padding: 12 8 12 8;"
+                    );
+
+                    setOnMouseEntered(e -> setStyle(
+                            "-fx-background-color: derive(" + backgroundColor + ", -5%);" +
+                                    "-fx-border-color: transparent transparent " + borderColor + " transparent;" +
+                                    "-fx-border-width: 0 0 1 0;" +
+                                    "-fx-padding: 12 8 12 8;" +
+                                    "-fx-background-radius: 6;"
+                    ));
+
+                    setOnMouseExited(e -> setStyle(
+                            "-fx-background-color: transparent;" +
+                                    "-fx-border-color: transparent transparent " + borderColor + " transparent;" +
+                                    "-fx-border-width: 0 0 1 0;" +
+                                    "-fx-padding: 12 8 12 8;"
+                    ));
+                } else {
+                    setStyle("");
+                }
+            }
+        };
+    }
+
+    private TableCell<ToDoListDto, String> createTaskNameCell() {
+        return new TableCell<ToDoListDto, String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (item == null || empty) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    VBox content = new VBox(4);
+                    Label taskName = new Label(item);
+                    taskName.setFont(Font.font("System", FontWeight.MEDIUM, 15));
+                    taskName.setTextFill(Color.web(textColor));
+
+                    content.getChildren().add(taskName);
+                    setGraphic(content);
+                    setText(null);
+                }
+                setStyle("-fx-alignment: CENTER_LEFT; -fx-padding: 8;");
+            }
+        };
+    }
+
+    private TableCell<ToDoListDto, String> createStatusCell() {
+        return new TableCell<ToDoListDto, String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (item == null || empty) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    Label statusLabel = new Label(item.toUpperCase());
+                    statusLabel.setFont(Font.font("System", FontWeight.BOLD, 11));
+                    statusLabel.setPadding(new Insets(4, 8, 4, 8));
+
+                    if ("active".equalsIgnoreCase(item)) {
+                        statusLabel.setStyle(
+                                "-fx-background-color: " + activeColor + ";" +
+                                        "-fx-text-fill: white;" +
+                                        "-fx-background-radius: 12;"
+                        );
+                    } else {
+                        statusLabel.setStyle(
+                                "-fx-background-color: " + closedColor + ";" +
+                                        "-fx-text-fill: white;" +
+                                        "-fx-background-radius: 12;"
+                        );
+                    }
+
+                    setGraphic(statusLabel);
+                    setText(null);
+                }
+                setStyle("-fx-alignment: CENTER; -fx-padding: 8;");
+            }
+        };
+    }
+
+    private TableCell<ToDoListDto, String> createImportanceCell() {
+        return new TableCell<ToDoListDto, String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (item == null || empty) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    String emoji = getImportanceEmoji(item);
+                    Label importanceLabel = new Label(emoji + " " + item.toUpperCase());
+                    importanceLabel.setFont(Font.font("System", FontWeight.BOLD, 12));
+                    importanceLabel.setPadding(new Insets(4, 8, 4, 8));
+
+                    String color = getImportanceColor(item);
+                    importanceLabel.setStyle(
+                            "-fx-background-color: " + color + ";" +
+                                    "-fx-text-fill: white;" +
+                                    "-fx-background-radius: 12;"
+                    );
+
+                    setGraphic(importanceLabel);
+                    setText(null);
+                }
+                setStyle("-fx-alignment: CENTER; -fx-padding: 8;");
+            }
+        };
+    }
+
+    private TableCell<ToDoListDto, String> createDateCell() {
+        return new TableCell<ToDoListDto, String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (item == null || empty || item.trim().isEmpty()) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    Label dateLabel = new Label(item);
+                    dateLabel.setFont(Font.font("System", FontWeight.NORMAL, 13));
+                    dateLabel.setTextFill(Color.web(subtleTextColor));
+
+                    setGraphic(dateLabel);
+                    setText(null);
+                }
+                setStyle("-fx-alignment: CENTER_LEFT; -fx-padding: 8;");
+            }
+        };
+    }
+
+    private String formatDateRange(ToDoListDto task) {
+        if (task.getStartDate() == null && task.getEndDate() == null) {
+            return "";
+        }
+
+        String start = task.getStartDate() != null ? task.getStartDate().toLocalDate().toString() : "Not set";
+        String end = task.getEndDate() != null ? task.getEndDate().toLocalDate().toString() : "Not set";
+
+        return start + " → " + end;
+    }
+
+    private String getImportanceEmoji(String importance) {
+        switch (importance.toLowerCase()) {
+            case "high": return "🔥";
+            case "normal": return "⚡";
+            case "low": return "💧";
+            default: return "⚡";
+        }
+    }
+
+    private String getImportanceColor(String importance) {
+        switch (importance.toLowerCase()) {
+            case "high": return highImportanceColor;
+            case "normal": return normalImportanceColor;
+            case "low": return lowImportanceColor;
+            default: return normalImportanceColor;
+        }
+    }
+
     private void initializeForm() {
-        taskNameField.setPromptText("Task Name");
-        taskNameField.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-padding: 8;");
+        taskNameField.setPromptText("Enter task name...");
 
         statusBox.getItems().addAll("active", "closed");
-        statusBox.setPromptText("Select Status");
-        statusBox.setStyle("-fx-background-radius: 5; -fx-border-radius: 5;");
+        statusBox.setPromptText("Select status");
 
-        startDatePicker.setPromptText("Start Date");
-        startDatePicker.setStyle("-fx-background-radius: 5; -fx-border-radius: 5;");
-
-        endDatePicker.setPromptText("End Date");
-        endDatePicker.setStyle("-fx-background-radius: 5; -fx-border-radius: 5;");
+        startDatePicker.setPromptText("Select start date");
+        endDatePicker.setPromptText("Select end date");
 
         importanceBox.getItems().addAll("high", "normal", "low");
-        importanceBox.setPromptText("Select Importance");
-        importanceBox.setStyle("-fx-background-radius: 5; -fx-border-radius: 5;");
+        importanceBox.setPromptText("Select importance level");
 
-        // Set cell factory to color the importance options
+        setupImportanceComboBox();
+    }
+
+    private void setupImportanceComboBox() {
         importanceBox.setCellFactory(lv -> new ListCell<String>() {
             @Override
             protected void updateItem(String item, boolean empty) {
@@ -183,25 +531,14 @@ public class TodosPage extends VBox {
                     setText(null);
                     setStyle("");
                 } else {
-                    setText(item.toUpperCase());
-                    switch (item.toLowerCase()) {
-                        case "high":
-                            setStyle("-fx-background-color: " + highImportanceColor + "; -fx-text-fill: white;");
-                            break;
-                        case "normal":
-                            setStyle("-fx-background-color: " + normalImportanceColor + "; -fx-text-fill: white;");
-                            break;
-                        case "low":
-                            setStyle("-fx-background-color: " + lowImportanceColor + "; -fx-text-fill: white;");
-                            break;
-                        default:
-                            setStyle("");
-                    }
+                    String emoji = getImportanceEmoji(item);
+                    setText(emoji + " " + item.toUpperCase());
+                    String color = getImportanceColor(item);
+                    setStyle("-fx-text-fill: " + color + "; -fx-font-weight: bold;");
                 }
             }
         });
 
-        // Set button cell to show colored text
         importanceBox.setButtonCell(new ListCell<String>() {
             @Override
             protected void updateItem(String item, boolean empty) {
@@ -210,79 +547,65 @@ public class TodosPage extends VBox {
                     setText(null);
                     setStyle("");
                 } else {
-                    setText(item.toUpperCase());
-                    switch (item.toLowerCase()) {
-                        case "high":
-                            setStyle("-fx-text-fill: " + highImportanceColor + ";");
-                            break;
-                        case "normal":
-                            setStyle("-fx-text-fill: " + normalImportanceColor + ";");
-                            break;
-                        case "low":
-                            setStyle("-fx-text-fill: " + lowImportanceColor + ";");
-                            break;
-                        default:
-                            setStyle("");
-                    }
+                    String emoji = getImportanceEmoji(item);
+                    setText(emoji + " " + item.toUpperCase());
+                    String color = getImportanceColor(item);
+                    setStyle("-fx-text-fill: " + color + "; -fx-font-weight: bold;");
                 }
             }
         });
     }
 
-    private HBox createFormLayout() {
-        Button createBtn = createStyledButton("Add Task", primaryColor);
-        createBtn.setOnAction(e -> handleCreateTask());
-
-        Button updateBtn = createStyledButton("Update", accentColor);
-        updateBtn.setOnAction(e -> handleUpdateTask());
-
-        Button deleteBtn = createStyledButton("Delete", "#FF5252");
-        deleteBtn.setOnAction(e -> handleDeleteTask());
-
-        Button clearBtn = createStyledButton("Clear", "#9E9E9E");
-        clearBtn.setOnAction(e -> clearForm());
-
-        Button refreshBtn = createStyledButton("Refresh", "#FFC107");
-        refreshBtn.setOnAction(e -> loadTasks());
-
-        HBox form = new HBox(10,
-                taskNameField, statusBox,
-                startDatePicker, endDatePicker,
-                importanceBox,
-                createBtn, updateBtn, deleteBtn, clearBtn, refreshBtn
-        );
-        form.setPadding(new Insets(15, 0, 0, 0));
-        form.setAlignment(Pos.CENTER_LEFT);
-
-        return form;
-    }
-
-    private Button createStyledButton(String text, String color) {
+    private Button createModernButton(String text, String color, boolean isPrimary) {
         Button button = new Button(text);
-        button.setStyle("-fx-background-color: " + color + "; " +
-                "-fx-text-fill: white; " +
-                "-fx-background-radius: 5; " +
-                "-fx-border-radius: 5; " +
-                "-fx-padding: 8 15 8 15; " +
-                "-fx-font-weight: bold;");
 
-        button.setOnMouseEntered(e ->
-                button.setStyle("-fx-background-color: derive(" + color + ", 20%); " +
-                        "-fx-text-fill: white; " +
-                        "-fx-background-radius: 5; " +
-                        "-fx-border-radius: 5; " +
-                        "-fx-padding: 8 15 8 15; " +
-                        "-fx-font-weight: bold;")
+        String baseStyle = isPrimary ?
+                "-fx-background-color: linear-gradient(to bottom, " + color + ", derive(" + color + ", -10%));" +
+                        "-fx-text-fill: white;" :
+                "-fx-background-color: transparent;" +
+                        "-fx-border-color: " + color + ";" +
+                        "-fx-border-width: 1;" +
+                        "-fx-text-fill: " + color + ";";
+
+        button.setStyle(baseStyle +
+                "-fx-background-radius: 8;" +
+                "-fx-border-radius: 8;" +
+                "-fx-padding: 10 20 10 20;" +
+                "-fx-font-weight: " + (isPrimary ? "bold" : "normal") + ";" +
+                "-fx-font-size: 13;" +
+                "-fx-cursor: hand;"
         );
 
-        button.setOnMouseExited(e ->
-                button.setStyle("-fx-background-color: " + color + "; " +
-                        "-fx-text-fill: white; " +
-                        "-fx-background-radius: 5; " +
-                        "-fx-border-radius: 5; " +
-                        "-fx-padding: 8 15 8 15; " +
-                        "-fx-font-weight: bold;")
-        );
+        // Hover effects
+        button.setOnMouseEntered(e -> {
+            String hoverStyle = isPrimary ?
+                    "-fx-background-color: linear-gradient(to bottom, derive(" + color + ", 10%), " + color + ");" +
+                            "-fx-text-fill: white;" :
+                    "-fx-background-color: " + color + ";" +
+                            "-fx-border-color: " + color + ";" +
+                            "-fx-border-width: 1;" +
+                            "-fx-text-fill: white;";
+
+            button.setStyle(hoverStyle +
+                    "-fx-background-radius: 8;" +
+                    "-fx-border-radius: 8;" +
+                    "-fx-padding: 10 20 10 20;" +
+                    "-fx-font-weight: " + (isPrimary ? "bold" : "normal") + ";" +
+                    "-fx-font-size: 13;" +
+                    "-fx-cursor: hand;"
+            );
+        });
+
+        button.setOnMouseExited(e -> {
+            button.setStyle(baseStyle +
+                    "-fx-background-radius: 8;" +
+                    "-fx-border-radius: 8;" +
+                    "-fx-padding: 10 20 10 20;" +
+                    "-fx-font-weight: " + (isPrimary ? "bold" : "normal") + ";" +
+                    "-fx-font-size: 13;" +
+                    "-fx-cursor: hand;"
+            );
+        });
 
         return button;
     }
