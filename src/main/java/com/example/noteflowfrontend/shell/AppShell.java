@@ -108,8 +108,7 @@ public class AppShell extends BorderPane {
         Button btnTrash = createNavButton("🗑️", "Trash", "trash");
 
 
-        navSection.getChildren().addAll(navTitle, btnNotes, btnFav, btnTodos,btnGpa);
-        navSection.getChildren().addAll(navTitle, btnNotes, btnFav, btnTodos, btnTrash);
+        navSection.getChildren().addAll(navTitle, btnNotes, btnFav, btnTodos,btnGpa,btnTrash);
 
         // Account section
         VBox accountSection = new VBox(4);
@@ -338,7 +337,6 @@ public class AppShell extends BorderPane {
             case "todos" -> router.navigate("todos");
             case "profile" -> router.navigate("profile");
             case "gpa-calculator" -> router.navigate("gpa-calculator");
-
             case "trash" -> router.navigate("trash");
         }
     }
