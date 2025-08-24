@@ -1,19 +1,21 @@
 // core/ApiClient.java
 package com.example.noteflowfrontend.core;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.net.CookieManager;
 import java.net.http.*;
 
 public class ApiClient {
-    private static String BASE = "http://localhost:8080/api";
+    private static String BASE = "http://localhost:8082/api";
     private static final HttpClient http = HttpClient.newBuilder()
             .cookieHandler(new CookieManager()).build();
-    private static final ObjectMapper mapper = new ObjectMapper();
-
+    private static final ObjectMapper mapper = new ObjectMapper()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     private static String bearer;
     public static void setBearer(String token) { bearer = token; }
+    public static String getBearer() { return bearer; }
     public static void clearBearer() { bearer = null; }
     public static String getBearer() { return bearer; }
 
@@ -49,6 +51,15 @@ public class ApiClient {
                 .PUT(HttpRequest.BodyPublishers.ofString(json)).build();
         var res = http.send(req, HttpResponse.BodyHandlers.ofString());
         if (res.statusCode() >= 300) throw new RuntimeException(res.body());
+        return mapper.readValue(res.body(), type);
+    }
+    // ... keep imports and existing code
+    public static <T> T delete(String path, Class<T> type) throws Exception {
+        var req = base(URI.create(BASE + path))
+                .DELETE().build();
+        var res = http.send(req, HttpResponse.BodyHandlers.ofString());
+        if (res.statusCode() >= 300 && res.statusCode() != 204) throw new RuntimeException(res.body());
+        if (type == null || res.statusCode() == 204 || res.body() == null || res.body().isBlank()) return null;
         return mapper.readValue(res.body(), type);
     }
 }

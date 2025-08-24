@@ -1,6 +1,7 @@
 module com.example.noteflowfrontend {
     requires javafx.controls;
     requires javafx.fxml;
+    requires javafx.web;                   // ✅ for HTMLEditor
 
     requires com.dlsc.formsfx;
     requires java.net.http;

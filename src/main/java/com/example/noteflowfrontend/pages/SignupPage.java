@@ -6,83 +6,72 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.scene.effect.BlurType;
-import javafx.scene.effect.DropShadow;
-import javafx.scene.effect.GaussianBlur;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 
 public class SignupPage {
     private final BorderPane root = new BorderPane();
 
     public SignupPage(Router router) {
-        root.setStyle("-fx-font-family: 'SF Pro Display', 'San Francisco', 'Helvetica Neue', 'Arial', sans-serif; -fx-font-size: 12px;");
+        root.setStyle("-fx-font-family: 'Segoe UI'; -fx-font-size: 14px;");
 
+        // Left hero section
         var left = new StackPane();
-        left.setMinWidth(420);
-        left.setStyle("-fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #007AFF 0%, #5856D6 50%, #AF52DE 100%); -fx-background-radius: 0 20 20 0;");
+        left.setMinWidth(520);
+        left.setStyle("-fx-background-color: linear-gradient(to bottom right, #6c4efb, #362269);");
 
-        var heroBox = new VBox(20);
+        var heroBox = new VBox(16);
         heroBox.setAlignment(Pos.CENTER_LEFT);
-        heroBox.setPadding(new Insets(36));
+        heroBox.setPadding(new Insets(24, 48, 24, 48));
 
         try {
-            var img = new Image(getClass().getResourceAsStream("/ui/hero.png"), 360, 0, true, true);
-            var imageView = new ImageView(img);
-            imageView.setEffect(new DropShadow(BlurType.GAUSSIAN, Color.rgb(0, 0, 0, 0.15), 20, 0.3, 0, 8));
-            heroBox.getChildren().add(imageView);
+            var img = new Image(getClass().getResourceAsStream("/ui/hero.png"), 420, 0, true, true);
+            heroBox.getChildren().add(new ImageView(img));
         } catch (Exception ignored) {}
 
         var title = new Label("Faster Notes Smarter Study!");
-        title.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: white; -fx-letter-spacing: -0.5px;");
+        title.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: white;");
 
         var body = new Text("Capture your notes in your way. Type, draw, annotate PDFs, and record audio—everything organized in one place.");
-        body.setWrappingWidth(360);
-        body.setStyle("-fx-fill: rgba(255, 255, 255, 0.8); -fx-font-size: 14px; -fx-line-spacing: 3px;");
+        body.setWrappingWidth(420);
+        body.setStyle("-fx-fill: #e0e0e0; -fx-font-size: 13px;");
 
         heroBox.getChildren().addAll(title, body);
         left.getChildren().add(heroBox);
 
+        // Right form section
         var right = new StackPane();
-        right.setStyle("-fx-background-color: rgba(248, 248, 248, 0.95); -fx-background-radius: 20 0 0 20;");
-        right.setEffect(new GaussianBlur(0.5));
+        right.setStyle("-fx-background-color: white;");
 
-        var card = new VBox(24);
+        var card = new VBox(22);
         card.setAlignment(Pos.TOP_LEFT);
-        card.setStyle("-fx-background-color: transparent; -fx-padding: 36;");
+        card.setStyle("-fx-background-color: transparent; -fx-padding: 24;");
 
-        var heading = new Label("Sign Up");
-        heading.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #1D1D1F; -fx-letter-spacing: -0.5px;");
-
-        String inputStyle = "-fx-background-color: rgba(255, 255, 255, 0.8); -fx-background-radius: 10; -fx-border-radius: 10; -fx-border-color: rgba(0, 0, 0, 0.1); -fx-border-width: 1; -fx-padding: 12 16; -fx-pref-width: 280; -fx-font-size: 14px; -fx-text-fill: #1D1D1F; -fx-prompt-text-fill: rgba(60, 60, 67, 0.6); -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.05), 6, 0.2, 0, 2); -fx-focus-color: #007AFF; -fx-faint-focus-color: rgba(0, 122, 255, 0.2);";
+        var heading = new Label("Signup");
+        heading.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #2C2A4A;");
 
         var username = new TextField();
-        username.setPromptText("Username");
-        username.setStyle(inputStyle);
+        username.setPromptText("username");
+        username.setStyle("-fx-background-radius: 8; -fx-border-radius: 8; -fx-border-color: #cccccc; -fx-padding: 10 12; -fx-pref-width: 300;");
 
         var email = new TextField();
-        email.setPromptText("Email Address");
-        email.setStyle(inputStyle);
+        email.setPromptText("Email");
+        email.setStyle("-fx-background-radius: 8; -fx-border-radius: 8; -fx-border-color: #cccccc; -fx-padding: 10 12; -fx-pref-width: 300;");
 
         var pwd = new PasswordField();
         pwd.setPromptText("Password");
-        pwd.setStyle(inputStyle);
+        pwd.setStyle("-fx-background-radius: 8; -fx-border-radius: 8; -fx-border-color: #cccccc; -fx-padding: 10 12; -fx-pref-width: 300;");
 
         var pwdPlain = new TextField();
         pwdPlain.setPromptText("Password");
         pwdPlain.setManaged(false);
         pwdPlain.setVisible(false);
-        pwdPlain.setStyle(inputStyle);
+        pwdPlain.setStyle("-fx-background-radius: 8; -fx-border-radius: 8; -fx-border-color: #cccccc; -fx-padding: 10 12; -fx-pref-width: 300;");
 
-        var eye = new Label("👁");
-        eye.setStyle("-fx-cursor: hand; -fx-text-fill: rgba(60, 60, 67, 0.6); -fx-font-size: 14px; -fx-alignment: center; -fx-padding: 10; -fx-background-color: transparent; -fx-background-radius: 6; -fx-min-width: 36; -fx-min-height: 36;");
-
-        eye.setOnMouseEntered(e -> eye.setStyle(eye.getStyle() + "-fx-background-color: rgba(0, 0, 0, 0.05);"));
-        eye.setOnMouseExited(e -> eye.setStyle(eye.getStyle().replace("-fx-background-color: rgba(0, 0, 0, 0.05);", "")));
-
+        var eye = new Label("\uD83D\uDC41");
+        eye.setStyle("-fx-cursor: hand; -fx-text-fill: #666; -fx-font-size: 14px; -fx-alignment: center; -fx-padding: 6;");
         eye.setOnMouseClicked(e -> {
             boolean show = pwdPlain.isVisible();
             if (show) {
@@ -91,38 +80,34 @@ public class SignupPage {
                 pwdPlain.setManaged(false);
                 pwd.setVisible(true);
                 pwd.setManaged(true);
-                eye.setText("👁");
             } else {
                 pwdPlain.setText(pwd.getText());
                 pwd.setVisible(false);
                 pwd.setManaged(false);
                 pwdPlain.setVisible(true);
                 pwdPlain.setManaged(true);
-                eye.setText("🙈");
             }
         });
 
         var pwdRow = new HBox(10, pwd, pwdPlain, eye);
-        pwdRow.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(pwd, Priority.ALWAYS);
         HBox.setHgrow(pwdPlain, Priority.ALWAYS);
 
-        var terms = new CheckBox("I accept the Terms & Conditions");
-        terms.setStyle("-fx-text-fill: rgba(60, 60, 67, 0.8); -fx-font-size: 12px; -fx-spacing: 6; -fx-cursor: hand;");
+        var terms = new CheckBox("I accept the terms & Condition");
+        terms.setStyle("-fx-text-fill: #666;");
 
         var msg = new Label();
-        msg.setStyle("-fx-text-fill: #FF3B30; -fx-font-size: 12px; -fx-font-weight: normal;");
+        msg.setStyle("-fx-text-fill: red; -fx-font-size: 12px;");
 
-        var signup = new Button("Sign Up");
-        signup.setStyle("-fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #007AFF 0%, #5856D6 100%); -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px; -fx-background-radius: 10; -fx-padding: 12 24; -fx-pref-width: 280; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0, 122, 255, 0.3), 10, 0.4, 0, 4); -fx-letter-spacing: 0.5px;");
+        var signup = new Button("SIGN UP");
+        signup.setStyle(
+                "-fx-background-color: linear-gradient(to right, #8f5cff, #a074ff); " +
+                        "-fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 50; " +
+                        "-fx-padding: 10 24; -fx-effect: dropshadow(one-pass-box, rgba(0, 0, 0, 0.2), 4, 0.3, 0, 4);"
+        );
 
-        signup.setOnMouseEntered(e -> { signup.setScaleX(1.02); signup.setScaleY(1.02); });
-        signup.setOnMouseExited(e -> { signup.setScaleX(1.0); signup.setScaleY(1.0); });
-
-        var toLogin = new Hyperlink("Already have an account? Sign In");
-        toLogin.setStyle("-fx-text-fill: #007AFF; -fx-underline: false; -fx-font-size: 13px; -fx-cursor: hand; -fx-padding: 6;");
-        toLogin.setOnMouseEntered(e -> toLogin.setUnderline(true));
-        toLogin.setOnMouseExited(e -> toLogin.setUnderline(false));
+        var toLogin = new Hyperlink("JUMP RIGHT IN");
+        toLogin.setStyle("-fx-text-fill: #2C2A4A; -fx-underline: true; -fx-font-weight: bold;");
         toLogin.setOnAction(e -> router.navigate("login"));
 
         signup.setOnAction(e -> {
@@ -131,62 +116,30 @@ public class SignupPage {
             String em = email.getText().trim();
             String pw = pwd.isVisible() ? pwd.getText() : pwdPlain.getText();
 
-            if (u.length() < 3) {
-                msg.setText("Username must be at least 3 characters.");
-                return;
-            }
-            if (!em.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
-                msg.setText("Please enter a valid email address.");
-                return;
-            }
-            if (pw.length() < 6) {
-                msg.setText("Password must be at least 6 characters.");
-                return;
-            }
-            if (!terms.isSelected()) {
-                msg.setText("Please accept the Terms & Conditions.");
-                return;
-            }
+            if (u.length() < 3) { msg.setText("Username must be at least 3 characters."); return; }
+            if (!em.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) { msg.setText("Enter a valid email."); return; }
+            if (pw.length() < 6) { msg.setText("Password must be at least 6 characters."); return; }
+            if (!terms.isSelected()) { msg.setText("Please accept the terms & condition."); return; }
 
             signup.setDisable(true);
-            signup.setText("Creating Account...");
-            signup.setOpacity(0.7);
-
+            signup.setText("Please wait…");
             boolean ok = Auth.register(u, em, pw);
-
             signup.setDisable(false);
-            signup.setText("Sign Up");
-            signup.setOpacity(1.0);
-
-            if (ok) {
-                router.navigate("folders");
-            } else {
-                msg.setText("Sign up failed. Username or email may already be taken.");
-            }
+            signup.setText("SIGN UP");
+            if (ok) router.navigate("folders");
+            else msg.setText("Signup failed. Username or email may be taken.");
         });
 
-        var linkContainer = new HBox(toLogin);
-        linkContainer.setAlignment(Pos.CENTER_LEFT);
-
-        card.getChildren().addAll(heading, username, email, pwdRow, terms, signup, msg, linkContainer);
-
-        var cardBackground = new Region();
-        cardBackground.setStyle("-fx-background-color: rgba(255, 255, 255, 0.7); -fx-background-radius: 20; -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 20, 0.3, 0, 8);");
+        var bottom = new HBox(6, new Label("Own an Account?"), toLogin);
+        card.getChildren().addAll(heading, username, email, pwdRow, terms, signup, msg, bottom);
 
         StackPane.setAlignment(card, Pos.CENTER_LEFT);
-        StackPane.setAlignment(cardBackground, Pos.CENTER_LEFT);
-        StackPane.setMargin(card, new Insets(40, 48, 40, 48));
-        StackPane.setMargin(cardBackground, new Insets(40, 48, 40, 48));
-
-        right.getChildren().addAll(cardBackground, card);
+        StackPane.setMargin(card, new Insets(24, 64, 24, 64));
+        right.getChildren().add(card);
 
         var wrap = new HBox(left, right);
         HBox.setHgrow(right, Priority.ALWAYS);
-        wrap.setStyle("-fx-background-color: #F2F2F7; -fx-background-radius: 20; -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.15), 30, 0.4, 0, 10);");
-
         root.setCenter(wrap);
-        root.setPadding(new Insets(20));
-        root.setStyle(root.getStyle() + "-fx-background-color: #F2F2F7;");
     }
 
     public Node getRoot() {

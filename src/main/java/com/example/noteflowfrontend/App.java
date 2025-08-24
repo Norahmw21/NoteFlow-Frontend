@@ -26,11 +26,15 @@ public class App extends Application {
         // --- APP ROUTES (WITH SIDEBAR/TOPBAR)
         shell.router.mount("folders", () -> {
             shell.setChromeVisible(true);
-            return new FoldersPage();
+            return new FoldersPage();   // My Notes
         });
         shell.router.mount("favorites", () -> {
             shell.setChromeVisible(true);
-            return new FoldersPage();
+            return new FavoritesPage();
+        });
+        shell.router.mount("trash", () -> {
+            shell.setChromeVisible(true);
+            return new TrashPage();
         });
         shell.router.mount("todos", () -> {
             shell.setChromeVisible(true);
@@ -44,6 +48,7 @@ public class App extends Application {
             shell.setChromeVisible(true);
             return new GpaCalculatorPage();
         });
+
 
         // first screen (choose one)
         shell.router.navigate("login");     // or "signup"

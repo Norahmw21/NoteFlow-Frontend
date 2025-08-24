@@ -105,9 +105,11 @@ public class AppShell extends BorderPane {
         Button btnFav = createNavButton("⭐", "Favorites", "favorites");
         Button btnTodos = createNavButton("✅", "To-Do", "todos");
         Button btnGpa = createNavButton("\uD83D\uDDA9", "GPA Calculator", "gpa-calculator");
+        Button btnTrash = createNavButton("🗑️", "Trash", "trash");
 
 
         navSection.getChildren().addAll(navTitle, btnNotes, btnFav, btnTodos,btnGpa);
+        navSection.getChildren().addAll(navTitle, btnNotes, btnFav, btnTodos, btnTrash);
 
         // Account section
         VBox accountSection = new VBox(4);
@@ -337,6 +339,7 @@ public class AppShell extends BorderPane {
             case "profile" -> router.navigate("profile");
             case "gpa-calculator" -> router.navigate("gpa-calculator");
 
+            case "trash" -> router.navigate("trash");
         }
     }
 
