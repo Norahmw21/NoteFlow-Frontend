@@ -27,6 +27,12 @@ public class TrashPage extends BorderPane {
         reload();
     }
 
+    // --- Helper: always run code on the FX thread ---
+    private void runFx(Runnable r) {
+        if (Platform.isFxApplicationThread()) r.run();
+        else Platform.runLater(r);
+    }
+
     private void setupHeader() {
         // Clean, modern title
         Label title = new Label("Trash");
@@ -93,8 +99,11 @@ public class TrashPage extends BorderPane {
     }
 
     private void reload() {
-        cardGrid.getChildren().clear();
-        cardGrid.getChildren().add(createLoadingIndicator());
+        // These UI touches must always be on the FX thread
+        runFx(() -> {
+            cardGrid.getChildren().clear();
+            cardGrid.getChildren().add(createLoadingIndicator());
+        });
 
         new Thread(() -> {
             try {
@@ -168,7 +177,13 @@ public class TrashPage extends BorderPane {
         restoreItem.setStyle("-fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;");
         restoreItem.setOnAction(e -> {
             new Thread(() -> {
-                try { NoteApi.setTrashed(note.id(), false); reload(); } catch (Exception ex) { showErr(ex); }
+                try {
+                    NoteApi.setTrashed(note.id(), false);
+                    // Call reload from FX thread
+                    Platform.runLater(this::reload);
+                } catch (Exception ex) {
+                    showErr(ex);
+                }
             }).start();
         });
 
@@ -176,7 +191,13 @@ public class TrashPage extends BorderPane {
         deleteForeverItem.setStyle("-fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;");
         deleteForeverItem.setOnAction(e -> {
             new Thread(() -> {
-                try { NoteApi.deletePermanent(note.id()); reload(); } catch (Exception ex) { showErr(ex); }
+                try {
+                    NoteApi.deletePermanent(note.id());
+                    // Call reload from FX thread
+                    Platform.runLater(this::reload);
+                } catch (Exception ex) {
+                    showErr(ex);
+                }
             }).start();
         });
 
@@ -366,4 +387,3 @@ public class TrashPage extends BorderPane {
         });
     }
 }
-
