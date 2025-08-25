@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 public class FoldersPage extends BorderPane {
     private final FlowPane cardGrid = new FlowPane(16, 16);
     private final TextField search = new TextField();
-    private final Button newTextBtn = new Button("✏️ New Note");
+    private final Button newTextBtn = new Button("✎ New Note");
     private final Button newDrawBtn = new Button("🎨 New Drawing");
 
     // NEW: filters
@@ -153,7 +153,7 @@ public class FoldersPage extends BorderPane {
         favItem.setStyle("-fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;");
         favItem.setOnAction(e -> performNoteAction(NoteAction.TOGGLE_FAVORITE, note));
 
-        MenuItem deleteItem = new MenuItem("🗑️ Delete");
+        MenuItem deleteItem = new MenuItem("❌ Delete");
         deleteItem.setStyle("-fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;");
         deleteItem.setOnAction(e -> performNoteAction(NoteAction.MOVE_TO_TRASH, note));
 

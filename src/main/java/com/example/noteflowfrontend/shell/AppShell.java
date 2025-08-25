@@ -107,7 +107,7 @@ public class AppShell extends BorderPane {
         Button btnTodos = createNavButton("✅", "To-Do", "todos");
         Button btnGpa = createNavButton("\uD83D\uDDA9", "GPA Calculator", "gpa-calculator");
         Button btnAi= createNavButton("\uD83E\uDD16", "Ai", "Ai");
-        Button btnTrash = createNavButton("🗑️", "Trash", "trash");
+        Button btnTrash = createNavButton("\uD83D\uDDD1", "Trash", "trash");
 
 
         navSection.getChildren().addAll(navTitle, btnNotes, btnFav, btnTodos, btnGpa, btnTrash,btnAi);

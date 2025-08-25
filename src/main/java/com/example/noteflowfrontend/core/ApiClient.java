@@ -1,7 +1,6 @@
 // core/ApiClient.java
 package com.example.noteflowfrontend.core;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.net.URI;

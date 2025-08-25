@@ -37,14 +37,14 @@ public class ChatPage extends BorderPane {
 
     private void initializeUI() {
         // Header
-        Label titleLabel = new Label("AI Chat Assistant");
+        Label titleLabel = new Label("AI Chat Assistant ✨");
         titleLabel.setFont(Font.font("Arial", FontWeight.BOLD, 24));
         titleLabel.setTextFill(Color.DARKBLUE);
 
         HBox header = new HBox(titleLabel);
         header.setAlignment(Pos.CENTER);
         header.setPadding(new Insets(20));
-        header.setStyle("-fx-background-color: #f0f8ff; -fx-border-color: #d3d3d3; -fx-border-width: 0 0 1 0;");
+        header.setStyle("-fx-background-color: #f7f0ff;");
 
         // Chat area
         messageContainer = new VBox(10);
@@ -64,7 +64,7 @@ public class ChatPage extends BorderPane {
         inputField.setStyle("-fx-font-size: 14px; -fx-padding: 10px;");
 
         modelComboBox = new ComboBox<>();
-        modelComboBox.getItems().addAll("llama3", "mistral", "codellama", "phi");
+        modelComboBox.getItems().addAll("llama3");
         modelComboBox.setValue("llama3");
         modelComboBox.setStyle("-fx-font-size: 14px;");
         modelComboBox.setPrefWidth(120);

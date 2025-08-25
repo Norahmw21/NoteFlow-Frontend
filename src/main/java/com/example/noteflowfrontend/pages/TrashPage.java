@@ -313,8 +313,8 @@ public class TrashPage extends BorderPane {
         emptyState.setPadding(new Insets(60));
         emptyState.setPrefWidth(400);
 
-        Label icon = new Label("🗑️");
-        icon.setStyle("-fx-font-size: 48px;");
+        Label icon = new Label("🗑");
+        icon.setStyle("-fx-font-size: 48px; -fx-text-fill: #374151;");
 
         Label title = new Label("Trash is empty");
         title.setStyle("""
