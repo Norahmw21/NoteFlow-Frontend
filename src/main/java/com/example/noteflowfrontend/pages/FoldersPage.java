@@ -207,47 +207,113 @@ public class FoldersPage extends BorderPane {
     }
 
     private void setupHeader() {
+        // Search field styling
         search.setPromptText("🔍 Search your notes...");
         search.setStyle("""
-            -fx-background-color: #FFFFFF; -fx-border-color: transparent; -fx-border-radius: 12px;
-            -fx-background-radius: 12px; -fx-padding: 12px 16px; -fx-font-size: 14px;
-            -fx-prompt-text-fill: #94A3B8; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 8, 0, 0, 2);
-        """);
-        search.setPrefWidth(300);
+        -fx-background-color: #FFFFFF; -fx-border-color: #E2E8F0; -fx-border-radius: 12px;
+        -fx-background-radius: 12px; -fx-padding: 12px 16px; -fx-font-size: 14px;
+        -fx-prompt-text-fill: #94A3B8; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.04), 8, 0, 0, 1);
+        -fx-border-width: 1px; -fx-min-width: 300px; -fx-pref-width: 350px; -fx-max-width: 400px;
+    """);
+
+        // Action buttons styling
         styleModernButton(newTextBtn, "#3B82F6", "#2563EB");
         styleModernButton(newDrawBtn, "#8B5CF6", "#7C3AED");
 
-        // NEW: filters UI
-        tagNameFilter.setPromptText("Tag name");
-        tagNameFilter.setPrefWidth(160);
-        tagColorFilter.setPromptText("Tag color");
-        tagColorFilter.setValue(null); // no default
-        styleModernButton(clearFiltersBtn, "#9CA3AF", "#6B7280");
+        // Filter components styling
+        tagNameFilter.setPromptText("Filter by tag name");
+        tagNameFilter.setPrefWidth(180);
+        tagNameFilter.setStyle("""
+        -fx-background-color: #F8FAFC; -fx-border-color: #E2E8F0; -fx-border-radius: 10px;
+        -fx-background-radius: 10px; -fx-padding: 10px 14px; -fx-font-size: 13px;
+        -fx-prompt-text-fill: #94A3B8; -fx-border-width: 1px;
+    """);
 
+        tagColorFilter.setPrefWidth(120);
+        tagColorFilter.setStyle("""
+        -fx-background-color: #F8FAFC; -fx-border-color: #E2E8F0; -fx-border-radius: 10px;
+        -fx-background-radius: 10px; -fx-padding: 6px 12px; -fx-font-size: 13px;
+    """);
+        tagColorFilter.setValue(null);
+
+        styleModernButton(clearFiltersBtn, "#F3F4F6", "#E5E7EB");
+        clearFiltersBtn.setStyle(clearFiltersBtn.getStyle() + "-fx-text-fill: #6B7280;");
+
+        // Title section
         Label title = new Label("My Notes");
         title.setStyle("""
-            -fx-font-size: 28px; -fx-text-fill: #1E293B; -fx-font-weight: 600;
-            -fx-font-family: 'SF Pro Display', 'Segoe UI', system-ui;
-        """);
+        -fx-font-size: 32px; -fx-text-fill: #0F172A; -fx-font-weight: 700;
+        -fx-font-family: 'SF Pro Display', 'Segoe UI', system-ui;
+    """);
+
         Label subtitle = new Label("Organize your thoughts beautifully");
         subtitle.setStyle("""
-            -fx-font-size: 14px; -fx-text-fill: #64748B;
-            -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
-        """);
-        VBox titleBox = new VBox(4, title, subtitle);
-        titleBox.setAlignment(Pos.CENTER_LEFT);
+        -fx-font-size: 15px; -fx-text-fill: #64748B; -fx-font-weight: 500;
+        -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
+    """);
 
-        HBox filterBox = new HBox(8, new Label("Filter:"), tagNameFilter, tagColorFilter, clearFiltersBtn);
-        filterBox.setAlignment(Pos.CENTER_LEFT);
+        VBox titleSection = new VBox(6, title, subtitle);
+        titleSection.setAlignment(Pos.TOP_LEFT);
 
-        HBox buttonGroup = new HBox(12, newTextBtn, newDrawBtn);
-        buttonGroup.setAlignment(Pos.CENTER_RIGHT);
+        // Action buttons container
+        HBox actionButtons = new HBox(12, newTextBtn, newDrawBtn);
+        actionButtons.setAlignment(Pos.CENTER_RIGHT);
 
-        var topSection = new HBox(24, titleBox, new Region(), search, filterBox, buttonGroup);
-        topSection.setAlignment(Pos.CENTER_LEFT);
-        topSection.setPadding(new Insets(0, 0, 24, 0));
-        HBox.setHgrow(topSection.getChildren().get(1), Priority.ALWAYS);
-        setTop(topSection);
+        // Top row: Title + Action Buttons
+        HBox topRow = new HBox();
+        topRow.setAlignment(Pos.CENTER_LEFT);
+        topRow.setPadding(new Insets(0, 0, 20, 0));
+
+        Region spacer1 = new Region();
+        HBox.setHgrow(spacer1, Priority.ALWAYS);
+        topRow.getChildren().addAll(titleSection, spacer1, actionButtons);
+
+        // Search and filters row
+        HBox searchAndFilters = new HBox(20);
+        searchAndFilters.setAlignment(Pos.CENTER_LEFT);
+        searchAndFilters.setPadding(new Insets(0, 0, 24, 0));
+
+        // Search container
+        VBox searchContainer = new VBox(8);
+        Label searchLabel = new Label("Search");
+        searchLabel.setStyle("""
+        -fx-font-size: 14px; -fx-text-fill: #374151; -fx-font-weight: 600;
+        -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
+    """);
+        searchContainer.getChildren().addAll(searchLabel, search);
+
+        // Filters container with improved layout
+        VBox filtersContainer = new VBox(8);
+        Label filtersLabel = new Label("Filters");
+        filtersLabel.setStyle("""
+        -fx-font-size: 14px; -fx-text-fill: #374151; -fx-font-weight: 600;
+        -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
+    """);
+
+        HBox filterControls = new HBox(12);
+        filterControls.setAlignment(Pos.CENTER_LEFT);
+        filterControls.getChildren().addAll(tagNameFilter, tagColorFilter, clearFiltersBtn);
+
+        filtersContainer.getChildren().addAll(filtersLabel, filterControls);
+
+        // Add separator line
+        Region separator = new Region();
+        separator.setPrefHeight(1);
+        separator.setMaxHeight(1);
+        separator.setStyle("-fx-background-color: linear-gradient(to right, transparent 0%, #E2E8F0 50%, transparent 100%);");
+
+        // Spacer for responsive layout
+        Region spacer2 = new Region();
+        HBox.setHgrow(spacer2, Priority.ALWAYS);
+
+        searchAndFilters.getChildren().addAll(searchContainer, filtersContainer, spacer2);
+
+        // Main header container
+        VBox headerContainer = new VBox();
+        headerContainer.setPadding(new Insets(0, 0, 20, 0));
+        headerContainer.getChildren().addAll(topRow, searchAndFilters, separator);
+
+        setTop(headerContainer);
     }
 
     private void setupMainContent() {
