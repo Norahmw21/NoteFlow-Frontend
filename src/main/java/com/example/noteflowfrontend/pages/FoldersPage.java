@@ -4,11 +4,12 @@ import com.example.noteflowfrontend.core.NoteApi;
 import com.example.noteflowfrontend.core.dto.NoteDto;
 import javafx.animation.FadeTransition;
 import javafx.animation.ScaleTransition;
-import javafx.concurrent.Task; // 1. IMPORT TASK
+import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
 import javafx.util.Duration;
 
 import java.util.ArrayList;
@@ -23,12 +24,16 @@ public class FoldersPage extends BorderPane {
     private final Button newTextBtn = new Button("✏️ New Note");
     private final Button newDrawBtn = new Button("🎨 New Drawing");
 
+    // NEW: filters
+    private final TextField tagNameFilter = new TextField();
+    private final ColorPicker tagColorFilter = new ColorPicker();
+    private final Button clearFiltersBtn = new Button("Clear");
+
     private List<NoteDto> notes = new ArrayList<>();
 
-    // 2. CREATE A REUSABLE THREAD POOL FOR BACKGROUND TASKS
     private final ExecutorService executorService = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r);
-        t.setDaemon(true); // Allows the app to exit even if this thread is running
+        t.setDaemon(true);
         return t;
     });
 
@@ -41,64 +46,45 @@ public class FoldersPage extends BorderPane {
         reload();
     }
 
-    // =======================================================================
-    // REWRITTEN HANDLERS USING TASK
-    // =======================================================================
-
     private void reload() {
         cardGrid.getChildren().clear();
         cardGrid.getChildren().add(createLoadingIndicator());
 
-        // 3. CREATE A TASK FOR LOADING ALL NOTES
         Task<List<NoteDto>> loadNotesTask = new Task<>() {
             @Override
             protected List<NoteDto> call() throws Exception {
-                // This runs on a background thread
-                return NoteApi.list();
+                String name = tagNameFilter.getText();
+                String color = (tagColorFilter.getValue() == null) ? null : toHex(tagColorFilter.getValue());
+                return NoteApi.list(name, color);
             }
         };
 
-        // 4. DEFINE WHAT HAPPENS ON SUCCESS (runs on FX thread)
         loadNotesTask.setOnSucceeded(event -> {
             notes = loadNotesTask.getValue();
-            render(); // Now render the notes
+            render();
         });
 
-        // 5. DEFINE WHAT HAPPENS ON FAILURE (runs on FX thread)
         loadNotesTask.setOnFailed(event -> {
             cardGrid.getChildren().clear();
             showErrorState(loadNotesTask.getException());
         });
 
-        // 6. SUBMIT THE TASK
         executorService.submit(loadNotesTask);
     }
 
     private void performNoteAction(NoteAction action, NoteDto note) {
-        // 7. CREATE A GENERIC TASK FOR NOTE ACTIONS (FAVORITE, TRASH)
         Task<Void> noteActionTask = new Task<>() {
             @Override
             protected Void call() throws Exception {
-                // This runs on a background thread
                 switch (action) {
-                    case TOGGLE_FAVORITE:
-                        NoteApi.setFavorite(note.id(), !note.favorite());
-                        break;
-                    case MOVE_TO_TRASH:
-                        NoteApi.setTrashed(note.id(), true);
-                        break;
+                    case TOGGLE_FAVORITE -> NoteApi.setFavorite(note.id(), !note.favorite());
+                    case MOVE_TO_TRASH -> NoteApi.setTrashed(note.id(), true);
                 }
                 return null;
             }
         };
-
-        // 8. ON SUCCESS, SIMPLY RELOAD THE LIST (runs on FX thread)
         noteActionTask.setOnSucceeded(event -> reload());
-
-        // 9. ON FAILURE, SHOW AN ERROR (runs on FX thread)
         noteActionTask.setOnFailed(event -> showErr(noteActionTask.getException()));
-
-        // 10. SUBMIT THE TASK
         executorService.submit(noteActionTask);
     }
 
@@ -106,10 +92,6 @@ public class FoldersPage extends BorderPane {
         TOGGLE_FAVORITE,
         MOVE_TO_TRASH
     }
-
-    // =======================================================================
-    // RENDER AND CARD CREATION METHODS NOW USE THE NEW TASK-BASED ACTIONS
-    // =======================================================================
 
     private void render() {
         cardGrid.getChildren().clear();
@@ -131,7 +113,6 @@ public class FoldersPage extends BorderPane {
             for (var note : filteredNotes) {
                 VBox noteCard = createNoteCard(note);
                 cardGrid.getChildren().add(noteCard);
-                // Add subtle entrance animation
                 FadeTransition fade = new FadeTransition(Duration.millis(200), noteCard);
                 fade.setFromValue(0.0);
                 fade.setToValue(1.0);
@@ -141,7 +122,6 @@ public class FoldersPage extends BorderPane {
     }
 
     private VBox createNoteCard(NoteDto note) {
-        // ... (Most of the UI setup is the same)
         Label title = new Label(note.title() == null ? "Untitled Note" : note.title());
         title.setStyle("""
             -fx-font-size: 16px; -fx-text-fill: #1E293B; -fx-font-weight: 600;
@@ -169,7 +149,6 @@ public class FoldersPage extends BorderPane {
         openItem.setStyle("-fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;");
         openItem.setOnAction(e -> openEditor(note, note.drawingJson() != null ? "draw" : "text"));
 
-        // 11. THIS IS WHERE THE CHANGE IS. USE THE NEW TASK-BASED METHOD.
         MenuItem favItem = new MenuItem(note.favorite() ? "⭐ Unfavorite" : "☆ Favorite");
         favItem.setStyle("-fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;");
         favItem.setOnAction(e -> performNoteAction(NoteAction.TOGGLE_FAVORITE, note));
@@ -187,9 +166,24 @@ public class FoldersPage extends BorderPane {
             contextMenu.show(menuBtn, javafx.geometry.Side.BOTTOM, 0, 0);
         });
 
+        // NEW: tag chip
+        String chipBg = (note.tagColor() == null || note.tagColor().isBlank()) ? "#E5E7EB" : note.tagColor();
+        String chipText = (note.tagName() == null || note.tagName().isBlank()) ? "Untagged" : note.tagName();
+
+        Label tagChip = new Label(chipText);
+        tagChip.setStyle(
+                "-fx-background-color: " + chipBg + ";" +
+                        "-fx-text-fill: white;" +
+                        "-fx-padding: 4px 8px;" +
+                        "-fx-background-radius: 999px;" +
+                        "-fx-font-size: 12px;" +
+                        "-fx-font-weight: 600;"
+        );
+
+
         HBox titleRow = new HBox(8, title, favLabel);
         titleRow.setAlignment(Pos.TOP_LEFT);
-        VBox leftContent = new VBox(12, titleRow, typeLabel);
+        VBox leftContent = new VBox(12, titleRow, typeLabel, tagChip);
         leftContent.setAlignment(Pos.TOP_LEFT);
         HBox topRow = new HBox(leftContent, new Region(), menuBtn);
         topRow.setAlignment(Pos.TOP_LEFT);
@@ -212,7 +206,6 @@ public class FoldersPage extends BorderPane {
         return new VBox(content);
     }
 
-    // ... (The rest of the file is unchanged and correct)
     private void setupHeader() {
         search.setPromptText("🔍 Search your notes...");
         search.setStyle("""
@@ -223,6 +216,14 @@ public class FoldersPage extends BorderPane {
         search.setPrefWidth(300);
         styleModernButton(newTextBtn, "#3B82F6", "#2563EB");
         styleModernButton(newDrawBtn, "#8B5CF6", "#7C3AED");
+
+        // NEW: filters UI
+        tagNameFilter.setPromptText("Tag name");
+        tagNameFilter.setPrefWidth(160);
+        tagColorFilter.setPromptText("Tag color");
+        tagColorFilter.setValue(null); // no default
+        styleModernButton(clearFiltersBtn, "#9CA3AF", "#6B7280");
+
         Label title = new Label("My Notes");
         title.setStyle("""
             -fx-font-size: 28px; -fx-text-fill: #1E293B; -fx-font-weight: 600;
@@ -235,9 +236,14 @@ public class FoldersPage extends BorderPane {
         """);
         VBox titleBox = new VBox(4, title, subtitle);
         titleBox.setAlignment(Pos.CENTER_LEFT);
+
+        HBox filterBox = new HBox(8, new Label("Filter:"), tagNameFilter, tagColorFilter, clearFiltersBtn);
+        filterBox.setAlignment(Pos.CENTER_LEFT);
+
         HBox buttonGroup = new HBox(12, newTextBtn, newDrawBtn);
         buttonGroup.setAlignment(Pos.CENTER_RIGHT);
-        var topSection = new HBox(24, titleBox, new Region(), search, buttonGroup);
+
+        var topSection = new HBox(24, titleBox, new Region(), search, filterBox, buttonGroup);
         topSection.setAlignment(Pos.CENTER_LEFT);
         topSection.setPadding(new Insets(0, 0, 24, 0));
         HBox.setHgrow(topSection.getChildren().get(1), Priority.ALWAYS);
@@ -272,6 +278,15 @@ public class FoldersPage extends BorderPane {
             } else {
                 search.setStyle(search.getStyle().replace("-fx-border-color: #3B82F6; -fx-border-width: 2px;", ""));
             }
+        });
+
+        // NEW: filter interactions
+        tagNameFilter.textProperty().addListener((o, a, b) -> reload());
+        tagColorFilter.valueProperty().addListener((o, a, b) -> reload());
+        clearFiltersBtn.setOnAction(e -> {
+            tagNameFilter.clear();
+            tagColorFilter.setValue(null);
+            reload();
         });
     }
 
@@ -365,5 +380,12 @@ public class FoldersPage extends BorderPane {
         alert.setTitle("Error");
         alert.setHeaderText("An error occurred");
         alert.showAndWait();
+    }
+
+    private static String toHex(Color c) {
+        int r = (int) Math.round(c.getRed() * 255);
+        int g = (int) Math.round(c.getGreen() * 255);
+        int b = (int) Math.round(c.getBlue() * 255);
+        return String.format("#%02X%02X%02X", r, g, b);
     }
 }

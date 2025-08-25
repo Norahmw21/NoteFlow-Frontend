@@ -37,7 +37,11 @@ public class NoteEditorPage extends BorderPane {
     private final TextField titleField = new TextField();
     private final HTMLEditor htmlEditor = new HTMLEditor();
 
-    // Drawing (use the fixed event-based model)
+    // NEW: tag inputs
+    private final TextField tagNameField = new TextField();
+    private final ColorPicker tagColorPicker = new ColorPicker();
+
+    // Drawing
     private final Canvas canvas = new Canvas(900, 600);
     private GraphicsContext gc;
     private final ColorPicker colorPicker = new ColorPicker(Color.BLACK);
@@ -47,11 +51,11 @@ public class NoteEditorPage extends BorderPane {
     private Long noteId; // null for new
     private String mode = "text"; // or "draw"
 
-    // Event-based drawing model (compatible with Jackson)
+    // event-based drawing model
     private final List<Map<String, Object>> events = new ArrayList<>();
     private static final ObjectMapper M = new ObjectMapper();
 
-    // Header controls (so we can wire handlers cleanly)
+    // Header controls
     private Button saveBtn;
     private Button favoriteBtn;
     private Button trashBtn;
@@ -99,18 +103,22 @@ public class NoteEditorPage extends BorderPane {
         """);
         titleField.setPrefWidth(400);
 
-        titleField.focusedProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal) {
-                titleField.setStyle(titleField.getStyle() +
-                        "-fx-border-color: #3B82F6; -fx-border-width: 2px;");
-            } else {
-                titleField.setStyle(titleField.getStyle().replace(
-                        "-fx-border-color: #3B82F6; -fx-border-width: 2px;", ""));
-            }
-        });
-
         VBox titleSection = new VBox(8, titleLabel, titleField);
         titleSection.setAlignment(Pos.CENTER_LEFT);
+
+        // NEW: tag section
+        Label tagLabel = new Label("Tag");
+        tagLabel.setStyle("""
+            -fx-font-size: 14px;
+            -fx-text-fill: #374151;
+            -fx-font-weight: 600;
+            -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
+        """);
+        tagNameField.setPromptText("Course / Topic");
+        tagNameField.setPrefWidth(200);
+        tagColorPicker.setPrefWidth(120);
+        HBox tagBox = new HBox(8, tagLabel, tagNameField, tagColorPicker);
+        tagBox.setAlignment(Pos.CENTER_LEFT);
 
         // Mode toggle
         var modeToggle = new ToggleGroup();
@@ -121,7 +129,6 @@ public class NoteEditorPage extends BorderPane {
         textToggle.setToggleGroup(modeToggle);
         drawToggle.setToggleGroup(modeToggle);
         if ("draw".equalsIgnoreCase(mode)) drawToggle.setSelected(true); else textToggle.setSelected(true);
-
         HBox modeSection = new HBox(16, textToggle, drawToggle);
         modeSection.setAlignment(Pos.CENTER_LEFT);
 
@@ -129,12 +136,11 @@ public class NoteEditorPage extends BorderPane {
         saveBtn = createFormalButton("Save", "#374151", "#1F2937");
         favoriteBtn = createFormalButton("Favorite", "#6B7280", "#4B5563");
         trashBtn = createFormalButton("Delete", "#6B7280", "#4B5563");
-
         HBox buttonSection = new HBox(12, saveBtn, favoriteBtn, trashBtn, exportMenu);
         buttonSection.setAlignment(Pos.CENTER_RIGHT);
 
         // Header layout
-        HBox topRow = new HBox(24, titleSection, new Region(), modeSection);
+        HBox topRow = new HBox(24, titleSection, new Region(), tagBox, modeSection);
         topRow.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(topRow.getChildren().get(1), Priority.ALWAYS);
 
@@ -182,13 +188,11 @@ public class NoteEditorPage extends BorderPane {
         var center = new StackPane(textPane, drawPane);
         setCenter(center);
 
-        // Show correct mode
         textPane.setVisible("text".equals(mode));
         textPane.setManaged("text".equals(mode));
         drawPane.setVisible("draw".equals(mode));
         drawPane.setManaged("draw".equals(mode));
 
-        // Store for switching
         center.setUserData(new VBox[]{textPane, drawPane});
     }
 
@@ -201,7 +205,6 @@ public class NoteEditorPage extends BorderPane {
             -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
         """);
 
-        // Size slider visuals
         sizeSlider.setShowTickMarks(true);
         sizeSlider.setShowTickLabels(true);
         sizeSlider.setMajorTickUnit(5);
@@ -260,7 +263,6 @@ public class NoteEditorPage extends BorderPane {
             -fx-border-radius: 8px;
         """);
 
-        // Canvas container
         StackPane canvasContainer = new StackPane(canvas);
         canvasContainer.setStyle("""
             -fx-background-color: #FFFFFF;
@@ -274,15 +276,15 @@ public class NoteEditorPage extends BorderPane {
         VBox drawingArea = new VBox(16, toolsLabel, toolsRow, canvasContainer);
         drawingArea.setPadding(new Insets(16));
 
-        setupCanvasEvents(); // set gc + events handlers
+        setupCanvasEvents();
 
         return drawingArea;
     }
 
-    // ---------- Canvas logic (event-based, robust) ----------
+    // ---------- Canvas logic ----------
     private void setupCanvasEvents() {
         gc = canvas.getGraphicsContext2D();
-        clearCanvas(); // ensure white bg
+        clearCanvas();
 
         canvas.addEventHandler(MouseEvent.MOUSE_PRESSED, e -> {
             gc.beginPath();
@@ -325,7 +327,6 @@ public class NoteEditorPage extends BorderPane {
         gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
     }
 
-    /** Replay saved events to the canvas and keep per-stroke style values. */
     private void redrawFromEvents() {
         if (gc == null) return;
         clearCanvas();
@@ -358,7 +359,7 @@ public class NoteEditorPage extends BorderPane {
     }
 
     private String serializeEvents() throws Exception {
-        if (events.isEmpty()) return ""; // store empty when no drawing
+        if (events.isEmpty()) return "";
         return M.writeValueAsString(events);
     }
 
@@ -379,12 +380,8 @@ public class NoteEditorPage extends BorderPane {
             handleTrash();
         });
 
-        textToggle.selectedProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal) switchMode("text");
-        });
-        drawToggle.selectedProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal) switchMode("draw");
-        });
+        textToggle.selectedProperty().addListener((obs, oldVal, newVal) -> { if (newVal) switchMode("text"); });
+        drawToggle.selectedProperty().addListener((obs, oldVal, newVal) -> { if (newVal) switchMode("draw"); });
     }
 
     private void switchMode(String newMode) {
@@ -411,6 +408,12 @@ public class NoteEditorPage extends BorderPane {
         }
         favoriteBtn.setText(existing.favorite() ? "Unfavorite" : "Favorite");
 
+        // NEW: load tag
+        if (existing.tagName() != null) tagNameField.setText(existing.tagName());
+        if (existing.tagColor() != null && !existing.tagColor().isBlank()) {
+            try { tagColorPicker.setValue(Color.web(existing.tagColor())); } catch (Exception ignored) {}
+        }
+
         // Rehydrate drawing if present
         String dj = existing.drawingJson();
         if (dj != null && !dj.isBlank()) {
@@ -432,12 +435,15 @@ public class NoteEditorPage extends BorderPane {
             String textHtml = "text".equals(mode) ? htmlEditor.getHtmlText() : null;
             String drawingJson = "draw".equals(mode) ? serializeEvents() : null;
 
+            String tagName = tagNameField.getText();
+            String tagColor = (tagColorPicker.getValue() == null) ? null : toHex(tagColorPicker.getValue());
+
             if (noteId == null) {
-                var n = NoteApi.create(title, textHtml, drawingJson);
+                var n = NoteApi.create(title, textHtml, drawingJson, tagName, tagColor);
                 noteId = n.id();
                 showModernInfo("Note Created", "Your note has been successfully created!");
             } else {
-                NoteApi.update(noteId, title, textHtml, drawingJson);
+                NoteApi.update(noteId, title, textHtml, drawingJson, tagName, tagColor);
                 showModernInfo("Note Saved", "Your changes have been saved successfully!");
             }
         } catch (Exception ex) {
@@ -468,7 +474,7 @@ public class NoteEditorPage extends BorderPane {
         }
     }
 
-    // ---------- Export (from your version, compatible with event-based canvas) ----------
+    // ---------- Export ----------
     private MenuButton createExportMenu() {
         MenuItem exportHtml = new MenuItem("Export text as HTML");
         exportHtml.setOnAction(e -> exportTextHtml());
@@ -530,7 +536,6 @@ public class NoteEditorPage extends BorderPane {
                 file = new File(file.getParentFile(), file.getName() + ".png");
             }
 
-            // Canvas already has a white background via clearCanvas()
             BufferedImage bi = SwingFXUtils.fromFXImage(canvas.snapshot(null, null), null);
             ImageIO.write(bi, "png", file);
             showModernInfo("Exported", "Saved: " + file.getName());
@@ -539,7 +544,6 @@ public class NoteEditorPage extends BorderPane {
         }
     }
 
-    // PDF with two pages: text snapshot (scaled) then drawing
     private void exportAsPdf() {
         try {
             FileChooser fc = new FileChooser();
@@ -552,7 +556,7 @@ public class NoteEditorPage extends BorderPane {
                 file = new File(file.getParentFile(), file.getName() + ".pdf");
             }
 
-            BufferedImage textImg = snapshotNodeToImage(getTextSnapshotNode(), 2.0); // crisp text
+            BufferedImage textImg = snapshotNodeToImage(getTextSnapshotNode(), 2.0);
             BufferedImage drawImg = SwingFXUtils.fromFXImage(canvas.snapshot(null, null), null);
 
             try (PDDocument doc = new PDDocument()) {
