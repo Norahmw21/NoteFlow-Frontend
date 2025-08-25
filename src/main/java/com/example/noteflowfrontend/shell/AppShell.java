@@ -294,6 +294,26 @@ public class AppShell extends BorderPane {
 
         router.navigate("login");
     }
+    public void showWelcomePage(String username) {
+        // Mount welcome-weather route if not already mounted
+        if (!routerHasRoute("welcome-weather")) {
+            router.mount("welcome-weather", () ->
+                    new com.example.noteflowfrontend.pages.WelcomeWeatherPage(router, username).create()
+            );
+        }
+
+        router.navigate("welcome-weather");
+    }
+
+    // Helper to check if route exists
+    private boolean routerHasRoute(String routeName) {
+        try {
+            router.navigate(routeName);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
 
 
     private void setupNavigation() {

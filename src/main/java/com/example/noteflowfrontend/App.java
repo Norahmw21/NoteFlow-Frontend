@@ -18,8 +18,9 @@ public class App extends Application {
         // --- AUTH ROUTES (NO SIDEBAR/TOPBAR)
         shell.router.mount("login", () -> {
             shell.setChromeVisible(false);
-            return new com.example.noteflowfrontend.pages.LoginPage(shell.router).getRoot();
+            return new com.example.noteflowfrontend.pages.LoginPage(shell.router, shell).getRoot();
         });
+
         shell.router.mount("signup", () -> {
             shell.setChromeVisible(false);
             return new com.example.noteflowfrontend.pages.SignupPage(shell.router).getRoot();
