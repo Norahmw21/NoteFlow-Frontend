@@ -10,7 +10,9 @@ public record NoteDto(
         String drawingJson,
         boolean favorite,
         boolean trashed,
-        String deletedAt,   // ← add this
+        String deletedAt,
         String createdAt,
-        String updatedAt
+        String updatedAt,
+        String tagName,   // NEW
+        String tagColor   // NEW (#RRGGBB)
 ) {}
