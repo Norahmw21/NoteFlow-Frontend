@@ -51,6 +51,10 @@ public class App extends Application {
             shell.setChromeVisible(true);
             return new GpaCalculatorPage();
         });
+        shell.router.mount("Ai", () -> {
+            shell.setChromeVisible(true);
+            return new ChatPage();
+        });
 
 
         // first screen (choose one)
@@ -62,5 +66,7 @@ public class App extends Application {
         stage.show();
     }
 
-    public static void main(String[] args) { launch(); }
+    public static void main(String[] args) {
+        launch();
+    }
 }
