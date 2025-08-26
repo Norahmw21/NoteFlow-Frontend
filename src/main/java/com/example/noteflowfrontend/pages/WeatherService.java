@@ -7,7 +7,7 @@ import java.net.http.HttpResponse;
 
 public class WeatherService {
 
-    private static final String URL = "https://api.open-meteo.com/v1/forecast?latitude=24.6877&longitude=46.7219&hourly=temperature_2m&timezone=auto&forecast_days=1";
+    private static final String URL = "https://api.open-meteo.com/v1/forecast?latitude=24.6877&longitude=46.7219&hourly=temperature_2m,weather_code&timezone=auto&forecast_days=1";
 
     public static String getWeatherJson() throws Exception {
         HttpClient client = HttpClient.newHttpClient();

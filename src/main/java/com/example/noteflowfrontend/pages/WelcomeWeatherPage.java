@@ -53,7 +53,6 @@ public class WelcomeWeatherPage {
         weatherLabel.setFont(Font.font("Arial", 18));
         weatherLabel.setTextFill(Color.web("#007AFF"));
 
-        // Layout
         VBox root = new VBox(15, welcomeLabel, timeLabel, weatherLabel);
         root.setAlignment(Pos.CENTER);
         root.setStyle(
@@ -61,7 +60,7 @@ public class WelcomeWeatherPage {
                         + "-fx-padding: 50; -fx-border-radius: 20; -fx-background-radius: 20;"
         );
 
-        // Fade in effect
+
         FadeTransition fade = new FadeTransition(Duration.seconds(1.5), root);
         fade.setFromValue(0);
         fade.setToValue(1);
@@ -79,7 +78,7 @@ public class WelcomeWeatherPage {
             }
         }).start();
 
-        // Auto-navigate after 5 seconds
+
         PauseTransition delay = new PauseTransition(Duration.seconds(5));
         delay.setOnFinished(event -> router.navigate("folders"));
         delay.play();
