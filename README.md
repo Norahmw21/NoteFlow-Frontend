@@ -130,7 +130,7 @@ ollama pull mistral
 
 
 ## 👥 Contributors  
-- Norah Alwabel - Raghad Alhelal [a link](https://github.com/Raghadlh) - Rouba Alharbi - Noura Altuwaim  
+- [Norah Alwabel] (https://github.com/Norahmw21) -[Raghad Alhelal](https://github.com/Raghadlh) - [Rouba Alharbi](https://github.com/Rubabdran) - [Noura Altuwaim](https://github.com/tunourah)  
 
 ---
 
