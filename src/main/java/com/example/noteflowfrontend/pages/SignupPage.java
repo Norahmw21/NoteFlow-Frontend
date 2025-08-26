@@ -113,11 +113,36 @@ public class SignupPage {
         var msg = new Label();
         msg.setStyle("-fx-text-fill: #FF3B30; -fx-font-size: 12px; -fx-font-weight: normal;");
 
-        var signup = new Button("Sign Up");
-        signup.setStyle("-fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #007AFF 0%, #5856D6 100%); -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px; -fx-background-radius: 10; -fx-padding: 12 24; -fx-pref-width: 280; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0, 122, 255, 0.3), 10, 0.4, 0, 4); -fx-letter-spacing: 0.5px;");
+        // Create spinner component
+        var spinner = new ProgressIndicator();
+        spinner.setMaxSize(20, 20);
+        spinner.setStyle("-fx-progress-color: white;");
+        spinner.setVisible(false);
+        spinner.setManaged(false);
 
-        signup.setOnMouseEntered(e -> { signup.setScaleX(1.02); signup.setScaleY(1.02); });
-        signup.setOnMouseExited(e -> { signup.setScaleX(1.0); signup.setScaleY(1.0); });
+        // Create button text label
+        var buttonText = new Label("Sign Up");
+        buttonText.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px; -fx-letter-spacing: 0.5px;");
+
+        // Create container for button content (text + spinner)
+        var buttonContent = new HBox(8);
+        buttonContent.setAlignment(Pos.CENTER);
+        buttonContent.getChildren().addAll(buttonText, spinner);
+
+        var signup = new Button();
+        signup.setGraphic(buttonContent);
+        signup.setStyle("-fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #007AFF 0%, #5856D6 100%); -fx-background-radius: 10; -fx-padding: 12 24; -fx-pref-width: 280; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0, 122, 255, 0.3), 10, 0.4, 0, 4);");
+
+        signup.setOnMouseEntered(e -> {
+            if (!signup.isDisabled()) {
+                signup.setScaleX(1.02);
+                signup.setScaleY(1.02);
+            }
+        });
+        signup.setOnMouseExited(e -> {
+            signup.setScaleX(1.0);
+            signup.setScaleY(1.0);
+        });
 
         var toLogin = new Hyperlink("Already have an account? Sign In");
         toLogin.setStyle("-fx-text-fill: #007AFF; -fx-underline: false; -fx-font-size: 13px; -fx-cursor: hand; -fx-padding: 6;");
@@ -148,21 +173,35 @@ public class SignupPage {
                 return;
             }
 
+            // Show spinner and update button state
             signup.setDisable(true);
-            signup.setText("Creating Account...");
-            signup.setOpacity(0.7);
+            buttonText.setText("Creating Account...");
+            spinner.setVisible(true);
+            spinner.setManaged(true);
+            signup.setOpacity(0.8);
+            signup.setStyle(signup.getStyle().replace("-fx-cursor: hand;", "-fx-cursor: default;"));
 
-            boolean ok = Auth.register(u, em, pw);
+            // Simulate async operation with a new thread
+            new Thread(() -> {
+                boolean ok = Auth.register(u, em, pw);
 
-            signup.setDisable(false);
-            signup.setText("Sign Up");
-            signup.setOpacity(1.0);
+                // Update UI on JavaFX Application Thread
+                javafx.application.Platform.runLater(() -> {
+                    // Hide spinner and restore button state
+                    spinner.setVisible(false);
+                    spinner.setManaged(false);
+                    signup.setDisable(false);
+                    buttonText.setText("Sign Up");
+                    signup.setOpacity(1.0);
+                    signup.setStyle(signup.getStyle().replace("-fx-cursor: default;", "-fx-cursor: hand;"));
 
-            if (ok) {
-                router.navigate("folders");
-            } else {
-                msg.setText("Sign up failed. Username or email may already be taken.");
-            }
+                    if (ok) {
+                        router.navigate("folders");
+                    } else {
+                        msg.setText("Sign up failed. Username or email may already be taken.");
+                    }
+                });
+            }).start();
         });
 
         var linkContainer = new HBox(toLogin);
@@ -193,3 +232,4 @@ public class SignupPage {
         return root;
     }
 }
+
