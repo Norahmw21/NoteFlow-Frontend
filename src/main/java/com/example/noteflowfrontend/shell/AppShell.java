@@ -1,6 +1,9 @@
 package com.example.noteflowfrontend.shell;
 
 import com.example.noteflowfrontend.core.Auth;
+import com.example.noteflowfrontend.pages.WeatherParser;
+import com.example.noteflowfrontend.pages.WeatherService;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
@@ -9,7 +12,12 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.paint.Color;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.util.Duration;
 
+import java.io.InputStream;
+import java.time.LocalTime;
 import java.util.Optional;
 
 
@@ -159,29 +167,94 @@ public class AppShell extends BorderPane {
 
         // Welcome section
         VBox welcomeSection = new VBox(2);
-
-        Label greeting = new Label("Welcome back! 👋");
+        Label greeting = new Label("Welcome back!");
         greeting.setStyle(String.format(
                 "-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: %s;",
                 TEXT_PRIMARY
         ));
-
         Label subtitle = new Label("Let's get productive today");
         subtitle.setStyle(String.format(
                 "-fx-font-size: 13; -fx-text-fill: %s; -fx-opacity: 0.8;",
                 TEXT_SECONDARY
         ));
-
         welcomeSection.getChildren().addAll(greeting, subtitle);
 
         // Flexible spacer
         Region grow = new Region();
         HBox.setHgrow(grow, Priority.ALWAYS);
 
-        topBar.getChildren().addAll(welcomeSection, grow);
+        // Weather container
+        HBox weatherContainer = new HBox(6); // spacing between labels and icon
+        weatherContainer.setAlignment(Pos.CENTER_LEFT);
+
+        // Time and Temp labels
+        Label timeText = new Label("Time:");
+        timeText.setStyle("-fx-font-size: 10; -fx-text-fill: #6C7293;");
+        Label hourLabel = new Label("--:--");
+        hourLabel.setStyle("-fx-font-size: 10; -fx-text-fill: #6C7293;");
+
+        Label tempText = new Label("Temp:");
+        tempText.setStyle("-fx-font-size: 10; -fx-text-fill: #6C7293; ");
+        Label tempLabel = new Label("-- °C");
+        tempLabel.setStyle("-fx-font-size: 10; -fx-text-fill: #6C7293;");
+
+        HBox timeTempBox = new HBox(4); // spacing between each label
+        timeTempBox.setAlignment(Pos.CENTER_LEFT);
+        timeTempBox.getChildren().addAll(timeText, hourLabel, tempText, tempLabel);
+
+
+        ImageView weatherIcon = new ImageView();
+        weatherIcon.setFitWidth(42);
+        weatherIcon.setFitHeight(42);
+        weatherIcon.setPreserveRatio(true);
+
+        weatherContainer.getChildren().addAll(timeTempBox, weatherIcon);
+
+        topBar.getChildren().addAll(welcomeSection, grow, weatherContainer);
+
+
+        Timeline clock = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
+            LocalTime now = LocalTime.now();
+            hourLabel.setText(String.format("%02d:%02d", now.getHour(), now.getMinute()));
+        }));
+        clock.setCycleCount(Timeline.INDEFINITE);
+        clock.play();
+
+
+        new Thread(() -> {
+            try {
+                int currentHour = LocalTime.now().getHour();
+                String json = WeatherService.getWeatherJson();
+                String temp = WeatherParser.getCurrentTemperatureForHour(json, currentHour);
+                String weatherType = WeatherParser.getWeatherTypeForHour(json, currentHour); // sunny, cloudy, rain
+
+                Platform.runLater(() -> {
+                    tempLabel.setText(temp);
+
+                    String iconPath = switch (weatherType.toLowerCase()) {
+                        case "sunny" -> "/weather_icons/sun.gif";
+                        case "cloudy" -> "/weather_icons/cloudy.gif";
+                        case "rain" -> "/weather_icons/rain.gif";
+                        default -> "/weather_icons/sun.gif";
+                    };
+
+                    InputStream is = getClass().getResourceAsStream(iconPath);
+                    if (is != null) {
+                        weatherIcon.setImage(new Image(is));
+                    } else {
+                        System.out.println("Weather icon not found: " + iconPath);
+                    }
+                });
+
+            } catch (Exception e) {
+                Platform.runLater(() -> tempLabel.setText("Weather unavailable"));
+                e.printStackTrace();
+            }
+        }).start();
 
         return topBar;
     }
+
 
     private Button createNavButton(String icon, String text, String route) {
         Button button = new Button();
@@ -203,10 +276,9 @@ public class AppShell extends BorderPane {
         button.setMaxWidth(Double.MAX_VALUE);
         button.setAlignment(Pos.CENTER_LEFT);
 
-        // Default style
+
         setNavButtonStyle(button, false);
 
-        // Store route for navigation
         button.setUserData(route);
 
         return button;
@@ -246,7 +318,6 @@ public class AppShell extends BorderPane {
             button.setEffect(null);
         }
 
-        // Hover effects
         button.setOnMouseEntered(e -> {
             if (!isActive) {
                 button.setStyle(button.getStyle() + String.format(

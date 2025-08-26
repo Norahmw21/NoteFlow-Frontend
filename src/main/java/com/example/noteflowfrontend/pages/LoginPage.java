@@ -1,7 +1,6 @@
 package com.example.noteflowfrontend.pages;
 
 import com.example.noteflowfrontend.core.Auth;
-import com.example.noteflowfrontend.shell.AppShell;
 import com.example.noteflowfrontend.shell.Router;
 import javafx.animation.RotateTransition;
 import javafx.animation.Timeline;
@@ -22,15 +21,9 @@ import javafx.util.Duration;
 public class LoginPage {
     private final BorderPane root = new BorderPane();
 
-    // Reference to the main AppShell
-    private final AppShell shell;
-
-    public LoginPage(Router router, AppShell shell) {
-        this.shell = shell; // assign shell reference
-
+    public LoginPage(Router router) {
         root.setStyle("-fx-font-family: 'SF Pro Display', 'San Francisco', 'Helvetica Neue', 'Arial', sans-serif; -fx-font-size: 12px;");
 
-        // LEFT HERO PANEL
         var left = new StackPane();
         left.setMinWidth(520);
         left.setStyle(
@@ -59,7 +52,6 @@ public class LoginPage {
         heroBox.getChildren().addAll(title, body);
         left.getChildren().add(heroBox);
 
-        // RIGHT LOGIN PANEL
         var right = new StackPane();
         right.setStyle("-fx-background-color: rgba(248,248,248,0.95); -fx-background-radius: 20 0 0 20;");
         right.setEffect(new GaussianBlur(0.5));
@@ -100,6 +92,16 @@ public class LoginPage {
                         "-fx-background-radius: 10; -fx-min-width: 40; -fx-min-height: 40;" +
                         "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 6, 0.2, 0, 1);"
         );
+
+        eye.setOnMouseEntered(e -> {
+            eye.setStyle(eye.getStyle().replace("rgba(0,0,0,0.02)", "rgba(0,0,0,0.12)"));
+            eye.setScaleX(1.05); eye.setScaleY(1.05);
+        });
+
+        eye.setOnMouseExited(e -> {
+            eye.setStyle(eye.getStyle().replace("rgba(0,0,0,0.12)", "rgba(0,0,0,0.02)"));
+            eye.setScaleX(1.0); eye.setScaleY(1.0);
+        });
 
         eye.setOnMouseClicked(e -> {
             boolean show = pwdPlain.isVisible();
@@ -151,16 +153,30 @@ public class LoginPage {
                         "-fx-effect: dropshadow(gaussian, rgba(0,122,255,0.4), 16, 0.5, 0, 6); -fx-letter-spacing: 0.3px;"
         );
 
+        login.setOnMouseEntered(e -> login.setStyle(login.getStyle().replace("#007AFF", "#0056CC")));
+        login.setOnMouseExited(e -> login.setStyle(login.getStyle().replace("#0056CC", "#007AFF")));
+        login.setOnMousePressed(e -> { login.setScaleX(0.98); login.setScaleY(0.98); });
+        login.setOnMouseReleased(e -> { login.setScaleX(1.0); login.setScaleY(1.0); });
+
         id.setOnAction(e -> login.fire());
         pwd.setOnAction(e -> login.fire());
         pwdPlain.setOnAction(e -> login.fire());
 
         var toSignup = new Hyperlink("No Account yet? Sign Up");
-        toSignup.setStyle("-fx-text-fill: #007AFF; -fx-font-size: 13px; -fx-cursor: hand;");
-
+        toSignup.setStyle(
+                "-fx-text-fill: #007AFF; -fx-underline: false; -fx-font-weight: 500;" +
+                        "-fx-font-size: 13px; -fx-cursor: hand; -fx-padding: 10; -fx-background-radius: 8;"
+        );
+        toSignup.setOnMouseEntered(e -> {
+            toSignup.setUnderline(true);
+            toSignup.setStyle(toSignup.getStyle().replace("transparent", "rgba(0,122,255,0.08)"));
+        });
+        toSignup.setOnMouseExited(e -> {
+            toSignup.setUnderline(false);
+            toSignup.setStyle(toSignup.getStyle().replace("rgba(0,122,255,0.08)", "transparent"));
+        });
         toSignup.setOnAction(e -> router.navigate("signup"));
 
-        // LOGIN BUTTON ACTION
         login.setOnAction(e -> {
             msg.setVisible(false);
             String email = id.getText().trim();
@@ -176,6 +192,14 @@ public class LoginPage {
             buttonText.setText("Logging In...");
             spinnerIcon.setVisible(true);
             rotateTransition.play();
+            login.setOpacity(0.8);
+
+            id.setDisable(true);
+            pwd.setDisable(true);
+            pwdPlain.setDisable(true);
+            eye.setDisable(true);
+            remember.setDisable(true);
+            toSignup.setDisable(true);
 
             new Thread(() -> {
                 try {
@@ -187,12 +211,22 @@ public class LoginPage {
                         spinnerIcon.setVisible(false);
                         buttonText.setText("Log In");
                         login.setDisable(false);
+                        login.setOpacity(1.0);
+
+                        id.setDisable(false);
+                        pwd.setDisable(false);
+                        pwdPlain.setDisable(false);
+                        eye.setDisable(false);
+                        remember.setDisable(false);
+                        toSignup.setDisable(false);
 
                         if (ok) {
-                            shell.showWelcomePage(email); // <<< FIXED: now uses AppShell
+                            router.navigate("folders");
                         } else {
                             msg.setText("Invalid email or password. Please try again.");
                             msg.setVisible(true);
+                            id.setStyle(inputStyle + "-fx-border-color: #FF3B30; -fx-border-width: 2;");
+                            pwdRow.setStyle("-fx-border-color: #FF3B30; -fx-border-width: 2; -fx-border-radius: 14;");
                         }
                     });
                 } catch (InterruptedException ex) {
@@ -201,7 +235,10 @@ public class LoginPage {
             }).start();
         });
 
-        // BUILD LAYOUT
+        id.textProperty().addListener((obs, old, val) -> id.setStyle(inputStyle));
+        pwd.textProperty().addListener((obs, old, val) -> pwdRow.setStyle(""));
+        pwdPlain.textProperty().addListener((obs, old, val) -> pwdRow.setStyle(""));
+
         var cardBackground = new Region();
         cardBackground.setStyle(
                 "-fx-background-color: rgba(255,255,255,0.8); -fx-background-radius: 24;" +
