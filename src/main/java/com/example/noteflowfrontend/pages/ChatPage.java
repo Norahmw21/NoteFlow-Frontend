@@ -54,7 +54,7 @@ public class ChatPage extends BorderPane {
     }
 
     private void initializeUI() {
-        // Main container gradient background
+        // Main container
         this.setStyle("-fx-background-color: " + BACKGROUND_COLOR + ";");
 
         // Header with gradient and shadow
@@ -231,7 +231,7 @@ public class ChatPage extends BorderPane {
         );
         modelComboBox.setPrefWidth(140);
 
-        //  send button with gradient
+        //  send button
         sendButton = new Button("Send ✈");
         sendButton.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
         sendButton.setStyle(
@@ -550,23 +550,4 @@ public class ChatPage extends BorderPane {
         updateStatus("Chat cleared");
     }
 
-    private void handleStreamingResponse(String chunk) {
-        Platform.runLater(() -> {
-            currentResponse.set(currentResponse.get() + chunk);
-
-            if (messageContainer.getChildren().isEmpty() ||
-                    !(messageContainer.getChildren().get(messageContainer.getChildren().size() - 1) instanceof HBox)) {
-                addAIMessage(currentResponse.get());
-            } else {
-                HBox lastMessageBox = (HBox) messageContainer.getChildren().get(messageContainer.getChildren().size() - 1);
-                if (lastMessageBox.getChildren().size() > 1 && lastMessageBox.getChildren().get(1) instanceof VBox) {
-                    VBox messageContent = (VBox) lastMessageBox.getChildren().get(1);
-                    if (!messageContent.getChildren().isEmpty() && messageContent.getChildren().get(0) instanceof Label) {
-                        Label lastLabel = (Label) messageContent.getChildren().get(0);
-                        lastLabel.setText(currentResponse.get());
-                    }
-                }
-            }
-        });
-    }
 }

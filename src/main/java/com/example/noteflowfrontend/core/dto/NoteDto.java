@@ -13,6 +13,6 @@ public record NoteDto(
         String deletedAt,
         String createdAt,
         String updatedAt,
-        String tagName,   // NEW
-        String tagColor   // NEW (#RRGGBB)
+        String tagName,
+        String tagColor
 ) {}
