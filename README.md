@@ -15,7 +15,6 @@ With a clean interface and smart features, it helps you stay organized, improve 
 - [▶️ Usage](#️-usage)  
 - [🔧 Configuration](#-configuration)  
 - [📂 Examples](#-examples)  
-- [❓ Troubleshooting](#-troubleshooting)  
 - [👥 Contributors](#-contributors)  
 - [📜 License](#-license)  
 
@@ -129,16 +128,9 @@ ollama pull mistral
 
 ---
 
-## ❓ Troubleshooting  
-- **Login fails** → Check DB connection & credentials.  
-- **Notes/tasks not saving** → Ensure PostgreSQL is running & migrations applied.  
-- **Chatbot not responding** → Verify Ollama installation & models.  
-- **JavaFX errors** → Ensure JavaFX SDK is installed & Java version is correct.  
-
----
 
 ## 👥 Contributors  
-- Norah Alwabel -Raghad Alhelal - Rouba Alharbi - Noura Altuwaim  
+- Norah Alwabel - Raghad Alhelal [a link](https://github.com/Raghadlh) - Rouba Alharbi - Noura Altuwaim  
 
 ---
 
