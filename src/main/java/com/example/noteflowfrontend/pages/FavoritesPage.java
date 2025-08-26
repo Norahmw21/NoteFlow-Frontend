@@ -194,7 +194,7 @@ public class FavoritesPage extends BorderPane {
                 """);
         VBox titleBox = new VBox(4, title, subtitle);
         titleBox.setAlignment(Pos.CENTER_LEFT);
-        Button refreshBtn = createModernButton("Refresh", "#6B7280", "#4B5563");
+        Button refreshBtn = createModernButton("Refresh", "#F9FAFB", "#F3F4F6");
         refreshBtn.setOnAction(e -> {
             animateButtonPress(refreshBtn);
             reload();
@@ -242,19 +242,52 @@ public class FavoritesPage extends BorderPane {
 
     private Button createModernButton(String text, String bgColor, String hoverColor) {
         Button btn = new Button(text);
+
+        // Default style: light background, dark text
         btn.setStyle(String.format("""
-                    -fx-background-color: %s;
-                    -fx-text-fill: white;
-                    -fx-padding: 10px 16px;
-                    -fx-background-radius: 8px;
-                    -fx-font-size: 14px;
-                    -fx-font-weight: 600;
-                    -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
-                    -fx-cursor: hand;
-                    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 6, 0, 0, 2);
-                """, bgColor));
-        btn.setOnMouseEntered(e -> btn.setStyle(btn.getStyle().replace(bgColor, hoverColor)));
-        btn.setOnMouseExited(e -> btn.setStyle(btn.getStyle().replace(hoverColor, bgColor)));
+        -fx-background-color: %s;
+        -fx-text-fill: #1F2937;   /* dark gray text */
+        -fx-padding: 10px 16px;
+        -fx-background-radius: 8px;
+        -fx-font-size: 14px;
+        -fx-font-weight: 600;
+        -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
+        -fx-cursor: hand;
+        -fx-border-color: #E5E7EB; /* subtle border */
+        -fx-border-radius: 8px;
+        -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 4, 0, 0, 1);
+    """, bgColor));
+
+        // Hover style: slightly darker background, stronger shadow
+        btn.setOnMouseEntered(e -> btn.setStyle(String.format("""
+        -fx-background-color: %s;
+        -fx-text-fill: #111827;   /* darker text for hover */
+        -fx-padding: 10px 16px;
+        -fx-background-radius: 8px;
+        -fx-font-size: 14px;
+        -fx-font-weight: 600;
+        -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
+        -fx-cursor: hand;
+        -fx-border-color: #D1D5DB; /* slightly darker border */
+        -fx-border-radius: 8px;
+        -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 6, 0, 0, 2);
+    """, hoverColor)));
+
+        // Reset style on mouse exit
+        btn.setOnMouseExited(e -> btn.setStyle(String.format("""
+        -fx-background-color: %s;
+        -fx-text-fill: #1F2937;
+        -fx-padding: 10px 16px;
+        -fx-background-radius: 8px;
+        -fx-font-size: 14px;
+        -fx-font-weight: 600;
+        -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
+        -fx-cursor: hand;
+        -fx-border-color: #E5E7EB;
+        -fx-border-radius: 8px;
+        -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 4, 0, 0, 1);
+    """, bgColor)));
+
         return btn;
     }
 

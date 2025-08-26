@@ -144,20 +144,45 @@ public class FoldersPage extends BorderPane {
             -fx-border-color: #E2E8F0; -fx-border-width: 1px; -fx-border-radius: 8px; -fx-cursor: hand;
         """);
 
+        // Create Context Menu
         ContextMenu contextMenu = new ContextMenu();
+        contextMenu.setStyle("""
+    -fx-background-color: linear-gradient(to bottom, #FFFFFF, #F2F2F7);
+    -fx-background-radius: 12;
+    -fx-padding: 6;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 8, 0, 0, 2);
+    -fx-border-color: #E5E5EA;
+    -fx-border-radius: 12;
+    -fx-border-width: 1;
+""");
+
+// Shared style for items
+        String menuItemStyle = """
+    -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
+    -fx-font-size: 14px;
+    -fx-text-fill: #1C1C1E;
+    -fx-padding: 6 14;
+""";
+
+// Open item
         MenuItem openItem = new MenuItem("📖 Open");
-        openItem.setStyle("-fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;");
+        openItem.setStyle(menuItemStyle);
         openItem.setOnAction(e -> openEditor(note, note.drawingJson() != null ? "draw" : "text"));
 
+// Favorite / Unfavorite item
         MenuItem favItem = new MenuItem(note.favorite() ? "⭐ Unfavorite" : "☆ Favorite");
-        favItem.setStyle("-fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;");
+        favItem.setStyle(menuItemStyle);
         favItem.setOnAction(e -> performNoteAction(NoteAction.TOGGLE_FAVORITE, note));
 
+// Delete item
         MenuItem deleteItem = new MenuItem("❌ Delete");
-        deleteItem.setStyle("-fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;");
+        deleteItem.setStyle(menuItemStyle + "-fx-text-fill: #FF3B30;"); // Red for destructive action
         deleteItem.setOnAction(e -> performNoteAction(NoteAction.MOVE_TO_TRASH, note));
 
+// Add items to menu
         contextMenu.getItems().addAll(openItem, favItem, deleteItem);
+
+
 
         menuBtn.setOnMouseEntered(e -> menuBtn.setStyle(menuBtn.getStyle().replace("#F8FAFC", "#F1F5F9")));
         menuBtn.setOnMouseExited(e -> menuBtn.setStyle(menuBtn.getStyle().replace("#F1F5F9", "#F8FAFC")));

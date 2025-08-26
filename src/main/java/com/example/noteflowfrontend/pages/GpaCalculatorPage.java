@@ -36,9 +36,12 @@ public class GpaCalculatorPage extends VBox {
 
         // Title
         Text title = new Text("GPA Calculator");
-        title.setFont(Font.font("System", FontWeight.BOLD, 28));
-        title.setStyle(String.format("-fx-fill: %s;", TEXT_PRIMARY));
-
+        title.setStyle("""
+            -fx-font-size: 28px; 
+            -fx-text-fill: #1E293B; 
+            -fx-font-weight: 600;
+            -fx-font-family: 'SF Pro Display', 'Segoe UI', system-ui;
+        """);
         // Scale selector
         HBox scaleBox = new HBox(15);
         scaleBox.setAlignment(Pos.CENTER_LEFT);
@@ -57,7 +60,7 @@ public class GpaCalculatorPage extends VBox {
 
         scaleBox.getChildren().addAll(scaleLbl, scaleCombo);
 
-        // Main container with modern styling
+        // Main container
         VBox inputContainer = new VBox(15);
         inputContainer.setPadding(new Insets(20));
         inputContainer.setStyle(String.format(
@@ -74,12 +77,11 @@ public class GpaCalculatorPage extends VBox {
         inputGrid.setVgap(12);
         inputGrid.setPadding(new Insets(10));
 
-        //  headers
+        // Headers
         String headerStyle = String.format(
                 "-fx-text-fill: %s; -fx-font-weight: bold; -fx-font-size: 14; -fx-padding: 0 0 8 0;",
                 PRIMARY_DARK
         );
-
         Label courseHeader = new Label("COURSE");
         courseHeader.setStyle(headerStyle);
         Label creditsHeader = new Label("CREDITS");
@@ -91,55 +93,51 @@ public class GpaCalculatorPage extends VBox {
         inputGrid.add(creditsHeader, 1, 0);
         inputGrid.add(gradeHeader, 2, 0);
 
-        // Add initial rows
+        // Initial rows
         for (int i = 0; i < 4; i++) {
             addCourseRow(inputGrid, i + 1);
         }
 
-        // Modern buttons
+        // Button styles
+        String primaryButtonStyle = """
+            -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #007AFF 0%, #5856D6 100%);
+            -fx-text-fill: white;
+            -fx-font-weight: bold;
+            -fx-font-size: 14px;
+            -fx-background-radius: 14;
+            -fx-padding: 14 30;
+            -fx-pref-width: 180;
+            -fx-cursor: hand;
+            -fx-effect: dropshadow(gaussian, rgba(0,122,255,0.4), 16, 0.5, 0, 6);
+            -fx-letter-spacing: 0.3px;
+        """;
+
+        String secondaryButtonStyle = String.format("""
+            -fx-background-color: transparent;
+            -fx-text-fill: %s;
+            -fx-border-color: %s;
+            -fx-border-radius: 14;
+            -fx-border-width: 1.5;
+            -fx-font-weight: bold;
+            -fx-font-size: 13px;
+            -fx-padding: 12 28;
+            -fx-cursor: hand;
+        """, PRIMARY_DARK, BORDER_COLOR);
+
+        // Buttons
         Button addRowButton = new Button("+ Add Course");
-        addRowButton.setStyle(String.format(
-                "-fx-background-color: transparent; " +
-                        "-fx-text-fill: %s; " +
-                        "-fx-border-color: %s; " +
-                        "-fx-border-radius: 6; " +
-                        "-fx-border-width: 1; " +
-                        "-fx-font-size: 13; " +
-                        "-fx-font-weight: bold; " +
-                        "-fx-cursor: hand; " +
-                        "-fx-padding: 8 16;",
-                PRIMARY_DARK, BORDER_COLOR
-        ));
+        addRowButton.setStyle(secondaryButtonStyle);
 
         Button calculateButton = new Button("Calculate GPA");
-        calculateButton.setStyle(String.format(
-                "-fx-background-color: linear-gradient(from 0%% 0%% to 100%% 0%%, %s 0%%, #4623E9 100%%); " +
-                        "-fx-text-fill: white; " +
-                        "-fx-background-radius: 8; " +
-                        "-fx-font-size: 14; " +
-                        "-fx-font-weight: bold; " +
-                        "-fx-cursor: hand; " +
-                        "-fx-padding: 10 24;",
-                PRIMARY_LIGHT
-        ));
+        calculateButton.setStyle(primaryButtonStyle);
 
         Button clearButton = new Button("Clear All");
-        clearButton.setStyle(String.format(
-                "-fx-background-color: transparent; " +
-                        "-fx-text-fill: %s; " +
-                        "-fx-border-color: %s; " +
-                        "-fx-border-radius: 6; " +
-                        "-fx-border-width: 1; " +
-                        "-fx-font-size: 13; " +
-                        "-fx-font-weight: bold; " +
-                        "-fx-cursor: hand; " +
-                        "-fx-padding: 8 16;",
-                TEXT_SECONDARY, BORDER_COLOR
-        ));
+        clearButton.setStyle(secondaryButtonStyle);
 
         HBox buttonBox = new HBox(15, addRowButton, calculateButton, clearButton);
         buttonBox.setAlignment(Pos.CENTER);
 
+        // Result container
         resultContainer = new VBox(5);
         resultContainer.setAlignment(Pos.CENTER);
         resultContainer.setPadding(new Insets(15));
@@ -166,13 +164,9 @@ public class GpaCalculatorPage extends VBox {
             addCourseRow(inputGrid, nextRow);
         });
 
-        calculateButton.setOnAction(e -> {
-            calculateGPA();
-        });
+        calculateButton.setOnAction(e -> calculateGPA());
 
-        clearButton.setOnAction(e -> {
-            clearAllFields();
-        });
+        clearButton.setOnAction(e -> clearAllFields());
 
         inputContainer.getChildren().addAll(inputGrid, buttonBox);
         this.getChildren().addAll(title, scaleBox, inputContainer, resultContainer);
@@ -208,7 +202,6 @@ public class GpaCalculatorPage extends VBox {
 
     private double convertGradeToPoints(String grade, double scale) {
         if (scale == 5.0) {
-            // 5.0 scale
             return switch (grade) {
                 case "A+" -> 5.0;
                 case "A" -> 4.75;
@@ -222,7 +215,6 @@ public class GpaCalculatorPage extends VBox {
                 default -> 0.0;
             };
         } else {
-            // Standard 4.0 scale
             return switch (grade) {
                 case "A+" -> 4.3;
                 case "A" -> 4.0;
@@ -285,14 +277,12 @@ public class GpaCalculatorPage extends VBox {
             String creditsText = creditsField.getText().trim();
             String grade = gradeCombo.getValue();
 
-            // Skip empty rows
             if (creditsText.isEmpty() && (grade == null || grade.equals("Please Select"))) {
                 continue;
             }
 
             hasCourses = true;
 
-            // Validate input
             if (creditsText.isEmpty() || grade == null || grade.equals("Please Select")) {
                 showError(resultText, resultContainer, "Please fill in all fields for each course");
                 hasError = true;
@@ -330,7 +320,6 @@ public class GpaCalculatorPage extends VBox {
     }
 
     private void clearAllFields() {
-        // Clear all input fields
         for (int row = 1; row < inputGrid.getRowCount(); row++) {
             TextField courseField = (TextField) getNodeAt(inputGrid, 0, row);
             TextField creditsField = (TextField) getNodeAt(inputGrid, 1, row);
@@ -341,10 +330,7 @@ public class GpaCalculatorPage extends VBox {
             if (gradeCombo != null) gradeCombo.setValue("Please Select");
         }
 
-        // Reset scale to default
         scaleCombo.setValue("4.0 Scale");
-
-        // Hide result container
         resultContainer.setVisible(false);
     }
 }

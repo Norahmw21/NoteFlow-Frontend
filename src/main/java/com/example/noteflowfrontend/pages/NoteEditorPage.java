@@ -8,6 +8,7 @@ import javafx.animation.ScaleTransition;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -34,15 +35,25 @@ import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 
 public class NoteEditorPage extends BorderPane {
+
+    // ==== THEME (matches AppShell) ====
+    private static final String PRIMARY_LIGHT = "#DABFFF";   // lavender
+    private static final String PRIMARY_DARK  = "#4F518C";   // dark purple-blue
+    private static final String SURFACE       = "#FFFFFF";   // cards
+    private static final String CANVAS_BG     = "#FAFBFF";   // app background
+    private static final String BORDER        = "#E5E9F2";   // subtle border
+    private static final String TEXT_PRIMARY  = "#2C2A4A";   // headings
+    private static final String TEXT_SECOND   = "#6C7293";   // secondary text
+
     private final TextField titleField = new TextField();
     private final HTMLEditor htmlEditor = new HTMLEditor();
 
-    // NEW: tag inputs
+    // Tags
     private final TextField tagNameField = new TextField();
     private final ColorPicker tagColorPicker = new ColorPicker();
 
     // Drawing
-    private final Canvas canvas = new Canvas(900, 600);
+    private final Canvas canvas = new Canvas(640, 360);
     private GraphicsContext gc;
     private final ColorPicker colorPicker = new ColorPicker(Color.BLACK);
     private final Slider sizeSlider = new Slider(1, 30, 3);
@@ -59,12 +70,13 @@ public class NoteEditorPage extends BorderPane {
     private Button saveBtn;
     private Button favoriteBtn;
     private Button trashBtn;
+    private MenuButton exportMenu;
     private RadioButton textToggle;
     private RadioButton drawToggle;
 
     public NoteEditorPage(NoteDto existing, String startMode) {
         setPadding(new Insets(24));
-        setStyle("-fx-background-color: linear-gradient(to bottom, #F8FAFC, #F1F5F9);");
+        setStyle("-fx-background-color: linear-gradient(to bottom, " + CANVAS_BG + ", #F1F5FF);");
 
         if (startMode != null) mode = startMode;
 
@@ -77,115 +89,186 @@ public class NoteEditorPage extends BorderPane {
         }
     }
 
-    // ---------- UI: Header ----------
+    // ---------- UI: Header (Word-style ribbon) ----------
     private void setupHeader(NoteDto existing) {
-        var exportMenu = createExportMenu();
+        exportMenu = createExportMenu();
 
-        // Title section
-        Label titleLabel = new Label("Note Title");
-        titleLabel.setStyle("""
-            -fx-font-size: 14px;
-            -fx-text-fill: #374151;
-            -fx-font-weight: 600;
-            -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
-        """);
+        // Shared sizes
+        final double INPUT_H = 38;
+        final double BTN_H   = 36;
+        final double BTN_W   = 118;
 
-        titleField.setPromptText("Enter your note title...");
+        // --- Title field
+        titleField.setPromptText("Enter note title…");
         titleField.setStyle("""
-            -fx-background-color: #FFFFFF;
-            -fx-border-color: #E5E7EB;
+            -fx-background-color: %s;
+            -fx-border-color: %s;
             -fx-border-radius: 8px;
             -fx-background-radius: 8px;
-            -fx-padding: 12px 16px;
-            -fx-font-size: 16px;
-            -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
-            -fx-prompt-text-fill: #9CA3AF;
-        """);
-        titleField.setPrefWidth(400);
-
-        VBox titleSection = new VBox(8, titleLabel, titleField);
-        titleSection.setAlignment(Pos.CENTER_LEFT);
-
-        // NEW: tag section
-        Label tagLabel = new Label("Tag");
-        tagLabel.setStyle("""
+            -fx-padding: 0 12px;
             -fx-font-size: 14px;
-            -fx-text-fill: #374151;
-            -fx-font-weight: 600;
-            -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
-        """);
-        tagNameField.setPromptText("Course / Topic");
-        tagNameField.setPrefWidth(200);
-        tagColorPicker.setPrefWidth(120);
-        HBox tagBox = new HBox(8, tagLabel, tagNameField, tagColorPicker);
-        tagBox.setAlignment(Pos.CENTER_LEFT);
+            -fx-text-fill: %s;
+            -fx-font-family: 'SF Pro Text','Segoe UI',system-ui;
+            -fx-prompt-text-fill: %s;
+        """.formatted(SURFACE, BORDER, TEXT_PRIMARY, TEXT_SECOND));
+        titleField.setPrefHeight(INPUT_H);
+        titleField.setMinHeight(INPUT_H);
+        titleField.setMaxHeight(INPUT_H);
+        titleField.setPrefWidth(360);
 
-        // Mode toggle
+        // --- Tag name
+        tagNameField.setPromptText("Course / Topic");
+        tagNameField.setStyle("""
+            -fx-background-color: %s;
+            -fx-border-color: %s;
+            -fx-border-radius: 8px;
+            -fx-background-radius: 8px;
+            -fx-padding: 0 12px;
+            -fx-font-size: 14px;
+            -fx-text-fill: %s;
+            -fx-font-family: 'SF Pro Text','Segoe UI',system-ui;
+            -fx-prompt-text-fill: %s;
+        """.formatted(SURFACE, BORDER, TEXT_PRIMARY, TEXT_SECOND));
+        tagNameField.setPrefHeight(INPUT_H);
+        tagNameField.setMinHeight(INPUT_H);
+        tagNameField.setMaxHeight(INPUT_H);
+        tagNameField.setPrefWidth(200);
+
+        // --- Tag color picker (styled to match)
+        tagColorPicker.setStyle("""
+            -fx-background-color: %s;
+            -fx-border-color: %s;
+            -fx-border-radius: 8px;
+            -fx-background-radius: 8px;
+            -fx-padding: 0 8px;
+        """.formatted(SURFACE, BORDER));
+        tagColorPicker.setPrefHeight(INPUT_H);
+        tagColorPicker.setMinHeight(INPUT_H);
+        tagColorPicker.setMaxHeight(INPUT_H);
+        tagColorPicker.setPrefWidth(120);
+
+        // --- Mode toggle
         var modeToggle = new ToggleGroup();
-        textToggle = new RadioButton("Text Editor");
-        drawToggle = new RadioButton("Drawing Canvas");
+        textToggle = new RadioButton("Text");
+        drawToggle = new RadioButton("Draw");
         styleRadioButton(textToggle);
         styleRadioButton(drawToggle);
         textToggle.setToggleGroup(modeToggle);
         drawToggle.setToggleGroup(modeToggle);
         if ("draw".equalsIgnoreCase(mode)) drawToggle.setSelected(true); else textToggle.setSelected(true);
-        HBox modeSection = new HBox(16, textToggle, drawToggle);
-        modeSection.setAlignment(Pos.CENTER_LEFT);
 
-        // Action buttons
-        saveBtn = createFormalButton("Save", "#374151", "#1F2937");
-        favoriteBtn = createFormalButton("Favorite", "#6B7280", "#4B5563");
-        trashBtn = createFormalButton("Delete", "#6B7280", "#4B5563");
-        HBox buttonSection = new HBox(12, saveBtn, favoriteBtn, trashBtn, exportMenu);
-        buttonSection.setAlignment(Pos.CENTER_RIGHT);
+        // --- Actions
+        saveBtn     = createGhostButton("Save");
+        favoriteBtn = createGhostButton("Favorite");
+        trashBtn    = createDangerGhostButton("Delete");
+        for (Button b : new Button[]{saveBtn, favoriteBtn, trashBtn}) {
+            b.setPrefHeight(BTN_H);
+            b.setMinHeight(BTN_H);
+            b.setMaxHeight(BTN_H);
+            b.setPrefWidth(BTN_W);
+        }
+        exportMenu.setPrefHeight(BTN_H);
+        exportMenu.setMinHeight(BTN_H);
+        exportMenu.setMaxHeight(BTN_H);
+        exportMenu.setPrefWidth(BTN_W);
 
-        // Header layout
-        HBox topRow = new HBox(24, titleSection, new Region(), tagBox, modeSection);
-        topRow.setAlignment(Pos.CENTER_LEFT);
-        HBox.setHgrow(topRow.getChildren().get(1), Priority.ALWAYS);
+        // ===== Ribbon groups (like Word) =====
+        // Each group: label + pill container for controls
+        VBox groupNote   = ribbonGroup("Note", new HBox(8, titleField, tagNameField, tagColorPicker));
+        VBox groupMode   = ribbonGroup("Mode", new HBox(8, textToggle, drawToggle));
+        VBox groupAction = ribbonGroup("Actions", new HBox(8, saveBtn, favoriteBtn, trashBtn));
+        VBox groupExport = ribbonGroup("Export", new HBox(8, exportMenu));
 
-        HBox bottomRow = new HBox(new Region(), buttonSection);
-        bottomRow.setAlignment(Pos.CENTER_RIGHT);
-        HBox.setHgrow(bottomRow.getChildren().get(0), Priority.ALWAYS);
+        // Ribbon bar
+        HBox ribbonRow = new HBox(16, groupNote, groupMode, groupAction, groupExport);
+        ribbonRow.setAlignment(Pos.CENTER_LEFT);
+        ribbonRow.setPadding(new Insets(10, 12, 8, 12));
+        ribbonRow.setStyle("""
+            -fx-background-color: linear-gradient(to bottom, #FFFFFF, #FBFCFF);
+            -fx-border-color: %s;
+            -fx-border-width: 0 0 1 0;
+        """.formatted(BORDER));
 
-        VBox header = new VBox(16, topRow, bottomRow);
-        header.setPadding(new Insets(0, 0, 24, 0));
-        setTop(header);
+        // Scroll if narrow (keeps single row)
+        ScrollPane ribbonScroll = new ScrollPane(ribbonRow);
+        ribbonScroll.setFitToHeight(true);
+        ribbonScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        ribbonScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        ribbonScroll.setPannable(true);
+        ribbonScroll.setStyle("""
+            -fx-background-color: transparent;
+            -fx-background-insets: 0;
+            -fx-padding: 0;
+        """);
+
+        // Put ribbon at top
+        VBox topBox = new VBox(ribbonScroll);
+        topBox.setSpacing(10);
+        topBox.setPadding(new Insets(0, 0, 14, 0));
+        setTop(topBox);
+    }
+
+    // Helper to make a “Word ribbon group” (title + rounded container)
+    private VBox ribbonGroup(String title, Node contentRow) {
+        HBox pill = new HBox(contentRow);
+        pill.setAlignment(Pos.CENTER_LEFT);
+        pill.setPadding(new Insets(8));
+        pill.setStyle("""
+            -fx-background-color: %s;
+            -fx-border-color: %s;
+            -fx-background-radius: 10px;
+            -fx-border-radius: 10px;
+            -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.03), 6, 0, 0, 1);
+        """.formatted(SURFACE, BORDER));
+
+        Label lbl = new Label(title);
+        lbl.setStyle("""
+            -fx-font-size: 11px;
+            -fx-text-fill: %s;
+            -fx-font-family: 'SF Pro Text','Segoe UI',system-ui;
+        """.formatted(TEXT_SECOND));
+
+        VBox box = new VBox(6, pill, lbl);
+        box.setAlignment(Pos.TOP_LEFT);
+        return box;
     }
 
     // ---------- UI: Center ----------
     private void setupMainContent() {
         htmlEditor.setStyle("""
-            -fx-background-color: #FFFFFF;
-            -fx-border-color: #E5E7EB;
+            -fx-background-color: %s;
+            -fx-border-color: %s;
             -fx-border-radius: 12px;
             -fx-background-radius: 12px;
-            -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 8, 0, 0, 2);
-        """);
+            -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.04), 8, 0, 0, 2);
+        """.formatted(SURFACE, BORDER));
 
         VBox textPane = new VBox(htmlEditor);
-        textPane.setPadding(new Insets(8));
+        textPane.setPadding(new Insets(10));
         textPane.setStyle("""
-            -fx-background-color: #FFFFFF;
+            -fx-background-color: %s;
             -fx-background-radius: 12px;
-            -fx-border-color: #E5E7EB;
+            -fx-border-color: %s;
             -fx-border-width: 1px;
             -fx-border-radius: 12px;
-            -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 12, 0, 0, 4);
-        """);
+            -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 12, 0, 0, 4);
+        """.formatted(SURFACE, BORDER));
+        VBox.setVgrow(htmlEditor, Priority.ALWAYS);
+        htmlEditor.setPrefHeight(520);
 
         VBox drawPane = new VBox(buildDrawingTools());
-        drawPane.setPadding(new Insets(8));
+        drawPane.setPadding(new Insets(10));
         drawPane.setStyle("""
-            -fx-background-color: #FFFFFF;
+            -fx-background-color: %s;
             -fx-background-radius: 12px;
-            -fx-border-color: #E5E7EB;
+            -fx-border-color: %s;
             -fx-border-width: 1px;
             -fx-border-radius: 12px;
-            -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 12, 0, 0, 4);
-        """);
+            -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 12, 0, 0, 4);
+        """.formatted(SURFACE, BORDER));
 
         var center = new StackPane(textPane, drawPane);
+        center.setPadding(new Insets(4, 0, 0, 0));
         setCenter(center);
 
         textPane.setVisible("text".equals(mode));
@@ -200,46 +283,46 @@ public class NoteEditorPage extends BorderPane {
         Label toolsLabel = new Label("Drawing Tools");
         toolsLabel.setStyle("""
             -fx-font-size: 16px;
-            -fx-text-fill: #374151;
-            -fx-font-weight: 600;
-            -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
-        """);
+            -fx-text-fill: %s;
+            -fx-font-weight: 700;
+            -fx-font-family: 'SF Pro Text','Segoe UI',system-ui;
+        """.formatted(TEXT_PRIMARY));
 
         sizeSlider.setShowTickMarks(true);
         sizeSlider.setShowTickLabels(true);
         sizeSlider.setMajorTickUnit(5);
         sizeSlider.setBlockIncrement(1);
         sizeSlider.setStyle("""
-            -fx-background-color: #F3F4F6;
+            -fx-background-color: #F3F4F8;
             -fx-background-radius: 8px;
         """);
-        sizeSlider.setPrefWidth(150);
+        sizeSlider.setPrefWidth(160);
 
         Label sizeValue = new Label(String.format("%.0f px", sizeSlider.getValue()));
         sizeValue.setStyle("""
             -fx-font-size: 12px;
-            -fx-text-fill: #9CA3AF;
-            -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
-        """);
+            -fx-text-fill: %s;
+            -fx-font-family: 'SF Pro Text','Segoe UI',system-ui;
+        """.formatted(TEXT_SECOND));
         sizeSlider.valueProperty().addListener((obs, o, n) -> sizeValue.setText(String.format("%.0f px", n.doubleValue())));
 
         Label colorLabel = new Label("Color:");
         colorLabel.setStyle("""
             -fx-font-size: 14px;
-            -fx-text-fill: #6B7280;
-            -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
-        """);
+            -fx-text-fill: %s;
+            -fx-font-family: 'SF Pro Text','Segoe UI',system-ui;
+        """.formatted(TEXT_SECOND));
 
         Label sizeLabel = new Label("Brush Size:");
         sizeLabel.setStyle("""
             -fx-font-size: 14px;
-            -fx-text-fill: #6B7280;
-            -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
-        """);
+            -fx-text-fill: %s;
+            -fx-font-family: 'SF Pro Text','Segoe UI',system-ui;
+        """.formatted(TEXT_SECOND));
 
         styleToggleButton(eraserBtn);
 
-        Button clearBtn = createModernButton("Clear Canvas", "#6B7280", "#4B5563");
+        Button clearBtn = createGhostButton("Clear Canvas");
         clearBtn.setOnAction(e -> {
             animateButtonPress(clearBtn);
             clearCanvas();
@@ -252,31 +335,46 @@ public class NoteEditorPage extends BorderPane {
         HBox sizeSection = new HBox(8, sizeLabel, sizeSlider, sizeValue);
         sizeSection.setAlignment(Pos.CENTER_LEFT);
 
-        HBox toolsRow = new HBox(24, colorSection, sizeSection, eraserBtn, clearBtn);
+        FlowPane toolsRow = new FlowPane(24, 12, colorSection, sizeSection, eraserBtn, clearBtn);
         toolsRow.setAlignment(Pos.CENTER_LEFT);
-        toolsRow.setPadding(new Insets(16));
+        toolsRow.setPrefWrapLength(820);
+        toolsRow.setPadding(new Insets(14));
         toolsRow.setStyle("""
-            -fx-background-color: #F8FAFC;
-            -fx-background-radius: 8px;
-            -fx-border-color: #E5E7EB;
+            -fx-background-color: #F6F7FF;
+            -fx-background-radius: 10px;
+            -fx-border-color: %s;
             -fx-border-width: 1px;
-            -fx-border-radius: 8px;
-        """);
+            -fx-border-radius: 10px;
+        """.formatted(BORDER));
 
         StackPane canvasContainer = new StackPane(canvas);
         canvasContainer.setStyle("""
-            -fx-background-color: #FFFFFF;
-            -fx-border-color: #E5E7EB;
+            -fx-background-color: %s;
+            -fx-border-color: %s;
             -fx-border-width: 2px;
-            -fx-border-radius: 8px;
-            -fx-background-radius: 8px;
-        """);
-        canvasContainer.setPadding(new Insets(8));
+            -fx-border-radius: 10px;
+            -fx-background-radius: 10px;
+        """.formatted(SURFACE, BORDER));
+        canvasContainer.setPadding(new Insets(10));
 
-        VBox drawingArea = new VBox(16, toolsLabel, toolsRow, canvasContainer);
+        VBox drawingArea = new VBox(14, toolsLabel, toolsRow, canvasContainer);
         drawingArea.setPadding(new Insets(16));
 
         setupCanvasEvents();
+
+        // ---- Responsive canvas (keeps draw model intact) ----
+        drawingArea.widthProperty().addListener((obs, oldW, newW) -> {
+            double target = Math.min(1000, Math.max(360, newW.doubleValue() - 56));
+            canvas.setWidth(target);
+            clearCanvas();
+            redrawFromEvents();
+        });
+        drawingArea.heightProperty().addListener((obs, oldH, newH) -> {
+            double targetH = Math.min(700, Math.max(240, newH.doubleValue() - 220));
+            canvas.setHeight(targetH);
+            clearCanvas();
+            redrawFromEvents();
+        });
 
         return drawingArea;
     }
@@ -408,7 +506,7 @@ public class NoteEditorPage extends BorderPane {
         }
         favoriteBtn.setText(existing.favorite() ? "Unfavorite" : "Favorite");
 
-        // NEW: load tag
+        // Load tag
         if (existing.tagName() != null) tagNameField.setText(existing.tagName());
         if (existing.tagColor() != null && !existing.tagColor().isBlank()) {
             try { tagColorPicker.setValue(Color.web(existing.tagColor())); } catch (Exception ignored) {}
@@ -485,23 +583,32 @@ public class NoteEditorPage extends BorderPane {
         MenuItem exportPdf = new MenuItem("Export both as PDF");
         exportPdf.setOnAction(e -> exportAsPdf());
 
-        MenuButton mb = new MenuButton("Export", null, exportHtml, exportPng, exportPdf);
-        mb.setStyle("""
-        -fx-background-color: #374151;
-        -fx-text-fill: white;
-        -fx-padding: 10px 16px;
-        -fx-background-radius: 8px;
-        -fx-font-size: 14px;
-        -fx-font-weight: 600;
-        -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
-        -fx-cursor: hand;
-        -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 6, 0, 0, 2);
-    """);
+        // Compact button with icon only
+        MenuButton mb = new MenuButton("\uD83D\uDCE4", null, exportHtml, exportPng, exportPdf);
+        mb.setPrefWidth(40);
+        mb.setPrefHeight(32);
 
-        mb.setOnMouseEntered(e -> mb.setStyle(mb.getStyle().replace("#374151", "#1F2937")));
-        mb.setOnMouseExited(e -> mb.setStyle(mb.getStyle().replace("#1F2937", "#374151")));
+        mb.setStyle("""
+        -fx-background-color: rgba(79,81,140,0.10);
+        -fx-text-fill: %s;
+        -fx-background-radius: 6px;
+        -fx-font-size: 14px;
+        -fx-font-weight: 700;
+        -fx-font-family: 'SF Pro Text','Segoe UI',system-ui;
+        -fx-cursor: hand;
+        -fx-border-color: %s;
+        -fx-border-radius: 6px;
+        -fx-padding: 0;
+        -fx-effect: dropshadow(gaussian, rgba(79,81,140,0.18), 6, 0, 0, 2);
+    """.formatted(TEXT_PRIMARY, BORDER));
+
+        // Hover effect
+        mb.setOnMouseEntered(e -> mb.setStyle(mb.getStyle().replace("0.10", "0.22")));
+        mb.setOnMouseExited(e -> mb.setStyle(mb.getStyle().replace("0.22", "0.10")));
+
         return mb;
     }
+
 
     private void exportTextHtml() {
         try {
@@ -607,75 +714,121 @@ public class NoteEditorPage extends BorderPane {
     }
 
     // ---------- Styles & helpers ----------
-    private Button createFormalButton(String text, String bgColor, String hoverColor) {
-        Button btn = new Button(text);
-        btn.setStyle(String.format("""
-            -fx-background-color: %s;
-            -fx-text-fill: white;
-            -fx-padding: 10px 20px;
-            -fx-background-radius: 6px;
-            -fx-font-size: 14px;
-            -fx-font-weight: 500;
-            -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
-            -fx-cursor: hand;
-            -fx-border-color: transparent;
-            -fx-border-width: 1px;
-            -fx-border-radius: 6px;
-        """, bgColor));
+    private Button createPrimaryButton() {
+        Button button = new Button("Save");
+        button.setStyle("""
+        -fx-background-color: linear-gradient(from 0%% 0%% to 100%% 100%%, #2E3A59 0%%, #1E2A45 100%%);
+        -fx-text-fill: white;
+        -fx-padding: 8px 14px;
+        -fx-background-radius: 10px;
+        -fx-font-size: 13px;
+        -fx-font-weight: 700;
+        -fx-font-family: 'SF Pro Text','Segoe UI',system-ui;
+        -fx-cursor: hand;
+        -fx-effect: dropshadow(gaussian, rgba(30,42,69,0.25), 10, 0.3, 0, 3);
+    """);
+        button.setOnMouseEntered(e -> button.setStyle(button.getStyle().replace("0.25", "0.4")));
+        button.setOnMouseExited(e -> button.setStyle(button.getStyle().replace("0.4", "0.25")));
+        return button;
+    }
 
-        btn.setOnMouseEntered(e -> btn.setStyle(btn.getStyle().replace(bgColor, hoverColor)));
-        btn.setOnMouseExited(e -> btn.setStyle(btn.getStyle().replace(hoverColor, bgColor)));
+    private Button createGhostButton(String text) {
+        Button btn = new Button(text);
+        btn.setStyle("""
+        -fx-background-color: rgba(46,58,89,0.08);
+        -fx-text-fill: #2E3A59;
+        -fx-padding: 6px 12px;
+        -fx-background-radius: 8px;
+        -fx-font-size: 13px;
+        -fx-font-weight: 600;
+        -fx-font-family: 'SF Pro Text','Segoe UI',system-ui;
+        -fx-cursor: hand;
+        -fx-border-color: #C4C8D4;
+        -fx-border-radius: 8px;
+        -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 6, 0, 0, 2);
+    """);
+        btn.setOnMouseEntered(e -> btn.setStyle(btn.getStyle().replace("0.08", "0.16")));
+        btn.setOnMouseExited(e -> btn.setStyle(btn.getStyle().replace("0.16", "0.08")));
         return btn;
     }
 
-    private Button createModernButton(String text, String bgColor, String hoverColor) {
+    private Button createDangerGhostButton(String text) {
         Button btn = new Button(text);
-        btn.setStyle(String.format("""
-            -fx-background-color: %s;
-            -fx-text-fill: white;
-            -fx-padding: 10px 16px;
-            -fx-background-radius: 8px;
-            -fx-font-size: 14px;
-            -fx-font-weight: 600;
-            -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
-            -fx-cursor: hand;
-            -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 6, 0, 0, 2);
-        """, bgColor));
-
-        btn.setOnMouseEntered(e -> btn.setStyle(btn.getStyle().replace(bgColor, hoverColor)));
-        btn.setOnMouseExited(e -> btn.setStyle(btn.getStyle().replace(hoverColor, bgColor)));
+        btn.setStyle("""
+        -fx-background-color: rgba(203,68,53,0.08);
+        -fx-text-fill: #CB4435;
+        -fx-padding: 6px 12px;
+        -fx-background-radius: 8px;
+        -fx-font-size: 13px;
+        -fx-font-weight: 600;
+        -fx-font-family: 'SF Pro Text','Segoe UI',system-ui;
+        -fx-cursor: hand;
+        -fx-border-color: #C4C8D4;
+        -fx-border-radius: 8px;
+        -fx-effect: dropshadow(gaussian, rgba(203,68,53,0.2), 8, 0, 0, 2);
+    """);
+        btn.setOnMouseEntered(e -> btn.setStyle(btn.getStyle().replace("0.08", "0.16")));
+        btn.setOnMouseExited(e -> btn.setStyle(btn.getStyle().replace("0.16", "0.08")));
         return btn;
     }
 
-    private void styleRadioButton(RadioButton radio) {
-        radio.setStyle("""
-            -fx-font-size: 14px;
-            -fx-text-fill: #374151;
-            -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
-            -fx-font-weight: 500;
-        """);
+    private void styleRadioButton(RadioButton btn) {
+        btn.setStyle("""
+        -fx-background-color: #F6F7FA;
+        -fx-border-color: #C4C8D4;
+        -fx-border-radius: 8px;
+        -fx-background-radius: 8px;
+        -fx-padding: 4px 10px;
+        -fx-font-size: 13px;
+        -fx-font-family: 'SF Pro Text','Segoe UI',system-ui;
+        -fx-text-fill: #2E3A59;
+    """);
+        btn.setPrefHeight(30);
     }
 
     private void styleToggleButton(ToggleButton toggle) {
         toggle.setStyle("""
-            -fx-background-color: #F3F4F6;
-            -fx-text-fill: #374151;
-            -fx-padding: 8px 16px;
-            -fx-background-radius: 8px;
-            -fx-font-size: 14px;
-            -fx-font-weight: 500;
-            -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
-            -fx-cursor: hand;
-            -fx-border-color: #E5E7EB;
-            -fx-border-width: 1px;
-            -fx-border-radius: 8px;
-        """);
+        -fx-background-color: #F3F4F8;
+        -fx-text-fill: #2E3A59;
+        -fx-padding: 6px 12px;
+        -fx-background-radius: 8px;
+        -fx-font-size: 13px;
+        -fx-font-weight: 600;
+        -fx-font-family: 'SF Pro Text','Segoe UI',system-ui;
+        -fx-cursor: hand;
+        -fx-border-color: #C4C8D4;
+        -fx-border-width: 1px;
+        -fx-border-radius: 8px;
+    """);
 
         toggle.selectedProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal) {
-                toggle.setStyle(toggle.getStyle().replace("#F3F4F6", "#3B82F6").replace("#374151", "white"));
+                toggle.setStyle("""
+                -fx-background-color: linear-gradient(from 0%% 0%% to 100%% 100%%, #2E3A59 0%%, #1E2A45 100%%);
+                -fx-text-fill: white;
+                -fx-padding: 6px 12px;
+                -fx-background-radius: 8px;
+                -fx-font-size: 13px;
+                -fx-font-weight: 700;
+                -fx-font-family: 'SF Pro Text','Segoe UI',system-ui;
+                -fx-cursor: hand;
+                -fx-border-color: transparent;
+                -fx-border-radius: 8px;
+            """);
             } else {
-                toggle.setStyle(toggle.getStyle().replace("#3B82F6", "#F3F4F6").replace("white", "#374151"));
+                toggle.setStyle("""
+                -fx-background-color: #F3F4F8;
+                -fx-text-fill: #2E3A59;
+                -fx-padding: 6px 12px;
+                -fx-background-radius: 8px;
+                -fx-font-size: 13px;
+                -fx-font-weight: 600;
+                -fx-font-family: 'SF Pro Text','Segoe UI',system-ui;
+                -fx-cursor: hand;
+                -fx-border-color: #C4C8D4;
+                -fx-border-width: 1px;
+                -fx-border-radius: 8px;
+            """);
             }
         });
     }
@@ -684,8 +837,8 @@ public class NoteEditorPage extends BorderPane {
         ScaleTransition scale = new ScaleTransition(Duration.millis(100), btn);
         scale.setFromX(1.0);
         scale.setFromY(1.0);
-        scale.setToX(0.95);
-        scale.setToY(0.95);
+        scale.setToX(0.96);
+        scale.setToY(0.96);
         scale.setAutoReverse(true);
         scale.setCycleCount(2);
         scale.play();
@@ -716,9 +869,9 @@ public class NoteEditorPage extends BorderPane {
         alert.setHeaderText(title);
         alert.setContentText(message);
         alert.getDialogPane().setStyle("""
-            -fx-background-color: #FFFFFF;
-            -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
-        """);
+            -fx-background-color: %s;
+            -fx-font-family: 'SF Pro Text','Segoe UI',system-ui;
+        """.formatted(SURFACE));
         alert.showAndWait();
     }
 
@@ -728,9 +881,9 @@ public class NoteEditorPage extends BorderPane {
         alert.setHeaderText(title);
         alert.setContentText(message);
         alert.getDialogPane().setStyle("""
-            -fx-background-color: #FFFFFF;
-            -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
-        """);
+            -fx-background-color: %s;
+            -fx-font-family: 'SF Pro Text','Segoe UI',system-ui;
+        """.formatted(SURFACE));
         alert.showAndWait();
     }
 }
