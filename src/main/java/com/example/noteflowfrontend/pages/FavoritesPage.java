@@ -4,7 +4,7 @@ import com.example.noteflowfrontend.core.NoteApi;
 import com.example.noteflowfrontend.core.dto.NoteDto;
 import javafx.animation.FadeTransition;
 import javafx.animation.ScaleTransition;
-import javafx.concurrent.Task; // 1. IMPORT TASK
+import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
@@ -18,7 +18,7 @@ import java.util.concurrent.Executors;
 public class FavoritesPage extends BorderPane {
     private final FlowPane cardGrid = new FlowPane(16, 16);
 
-    // 2. CREATE A REUSABLE THREAD POOL FOR BACKGROUND TASKS
+    //  CREATE A REUSABLE THREAD POOL FOR BACKGROUND TASKS
     private final ExecutorService executorService = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r);
         t.setDaemon(true); // Allows the app to exit even if this thread is running
@@ -33,24 +33,18 @@ public class FavoritesPage extends BorderPane {
         reload();
     }
 
-    // =======================================================================
-    // REWRITTEN METHODS USING TASK
-    // =======================================================================
 
     private void reload() {
         cardGrid.getChildren().clear();
         cardGrid.getChildren().add(createLoadingIndicator());
 
-        // 3. CREATE A TASK FOR LOADING NOTES
         Task<List<NoteDto>> loadFavoritesTask = new Task<>() {
             @Override
             protected List<NoteDto> call() throws Exception {
-                // This runs on a background thread
                 return NoteApi.listFavorites();
             }
         };
 
-        // 4. DEFINE WHAT HAPPENS ON SUCCESS (runs on FX thread)
         loadFavoritesTask.setOnSucceeded(event -> {
             List<NoteDto> notes = loadFavoritesTask.getValue();
             cardGrid.getChildren().clear();
@@ -69,80 +63,74 @@ public class FavoritesPage extends BorderPane {
             }
         });
 
-        // 5. DEFINE WHAT HAPPENS ON FAILURE (runs on FX thread)
+        // 5 DEFINE WHAT HAPPENS ON FAILURE
         loadFavoritesTask.setOnFailed(event -> {
             cardGrid.getChildren().clear();
             showErrorState(loadFavoritesTask.getException());
         });
 
-        // 6. SUBMIT THE TASK TO THE EXECUTOR
+        // SUBMIT THE TASK TO THE EXECUTOR
         executorService.submit(loadFavoritesTask);
     }
 
     private void removeFromFavorites(NoteDto note) {
-        // 7. CREATE A TASK FOR THE UNFAVORITE ACTION
+        //  CREATE A TASK FOR THE UNFAVORITE ACTION
         Task<Void> unfavoriteTask = new Task<>() {
             @Override
             protected Void call() throws Exception {
-                // This runs on a background thread
                 NoteApi.setFavorite(note.id(), false);
                 return null;
             }
         };
 
-        // 8. ON SUCCESS, RELOAD THE LIST (runs on FX thread)
+        //  ON SUCCESS, RELOAD THE LIST
         unfavoriteTask.setOnSucceeded(event -> reload());
 
-        // 9. ON FAILURE, SHOW AN ERROR (runs on FX thread)
+        //  ON FAILURE, SHOW AN ERROR
         unfavoriteTask.setOnFailed(event -> showErr(unfavoriteTask.getException()));
 
-        // 10. SUBMIT THE TASK
+        //  SUBMIT THE TASK
         executorService.submit(unfavoriteTask);
     }
 
-    // =======================================================================
-    // MINOR CHANGE IN createNoteCard TO USE THE NEW TASK-BASED METHOD
-    // =======================================================================
-
     private VBox createNoteCard(NoteDto note) {
-        // ... (most of the method is unchanged)
         Label title = new Label(note.title() == null ? "Untitled Note" : note.title());
         title.setStyle("""
-            -fx-font-size: 16px;
-            -fx-text-fill: #1E293B;
-            -fx-font-weight: 600;
-            -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
-            -fx-wrap-text: true;
-        """);
+                    -fx-font-size: 16px;
+                    -fx-text-fill: #1E293B;
+                    -fx-font-weight: 600;
+                    -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
+                    -fx-wrap-text: true;
+                """);
         title.setMaxWidth(180);
 
         String typeIcon = note.drawingJson() != null ? "Drawing" : "Text Note";
         Label typeLabel = new Label(typeIcon);
         typeLabel.setStyle("""
-            -fx-font-size: 12px;
-            -fx-text-fill: #64748B;
-            -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
-        """);
+                    -fx-font-size: 12px;
+                    -fx-text-fill: #64748B;
+                    -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
+                """);
 
         Label favLabel = new Label("★");
         favLabel.setStyle("""
-            -fx-font-size: 16px;
-            -fx-text-fill: #F59E0B;
-        """);
+                    -fx-font-size: 16px;
+                    -fx-text-fill: #F59E0B;
+                """);
 
         Button menuBtn = new Button("⋯");
         menuBtn.setStyle("""
-            -fx-background-color: #F8FAFC;
-            -fx-text-fill: #64748B;
-            -fx-padding: 8px 12px;
-            -fx-background-radius: 8px;
-            -fx-font-size: 16px;
-            -fx-font-weight: bold;
-            -fx-border-color: #E2E8F0;
-            -fx-border-width: 1px;
-            -fx-border-radius: 8px;
-            -fx-cursor: hand;
-        """);
+                    -fx-background-color: #F8FAFC;
+                    -fx-text-fill: #64748B;
+                    -fx-padding: 8px 12px;
+                    -fx-background-radius: 8px;
+                    -fx-font-size: 16px;
+                    -fx-font-weight: bold;
+                    -fx-border-color: #E2E8F0;
+                    -fx-border-width: 1px;
+                    -fx-border-radius: 8px;
+                    -fx-cursor: hand;
+                """);
 
         ContextMenu contextMenu = new ContextMenu();
         MenuItem openItem = new MenuItem("Open");
@@ -151,7 +139,6 @@ public class FavoritesPage extends BorderPane {
 
         MenuItem unfavItem = new MenuItem("Remove from Favorites");
         unfavItem.setStyle("-fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;");
-        // 11. THIS IS THE ONLY CHANGE IN THIS METHOD
         unfavItem.setOnAction(e -> removeFromFavorites(note));
 
         contextMenu.getItems().addAll(openItem, unfavItem);
@@ -177,13 +164,13 @@ public class FavoritesPage extends BorderPane {
         content.setMinSize(220, 220);
         content.setMaxSize(220, 220);
         content.setStyle("""
-            -fx-background-color: #FFFFFF;
-            -fx-background-radius: 16px;
-            -fx-border-color: #E2E8F0;
-            -fx-border-width: 1px;
-            -fx-border-radius: 16px;
-            -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 12, 0, 0, 4);
-        """);
+                    -fx-background-color: #FFFFFF;
+                    -fx-background-radius: 16px;
+                    -fx-border-color: #E2E8F0;
+                    -fx-border-width: 1px;
+                    -fx-border-radius: 16px;
+                    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 12, 0, 0, 4);
+                """);
 
         content.setOnMouseEntered(e -> content.setStyle(content.getStyle() + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 20, 0, 0, 8);"));
         content.setOnMouseExited(e -> content.setStyle(content.getStyle().replace("-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 20, 0, 0, 8);", "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 12, 0, 0, 4);")));
@@ -191,21 +178,20 @@ public class FavoritesPage extends BorderPane {
         return new VBox(content);
     }
 
-    // ... (The rest of the file is unchanged and correct)
     private void setupHeader() {
         Label title = new Label("Favorite Notes");
         title.setStyle("""
-            -fx-font-size: 28px; 
-            -fx-text-fill: #1E293B; 
-            -fx-font-weight: 600;
-            -fx-font-family: 'SF Pro Display', 'Segoe UI', system-ui;
-        """);
+                    -fx-font-size: 28px; 
+                    -fx-text-fill: #1E293B; 
+                    -fx-font-weight: 600;
+                    -fx-font-family: 'SF Pro Display', 'Segoe UI', system-ui;
+                """);
         Label subtitle = new Label("Your starred notes for quick access");
         subtitle.setStyle("""
-            -fx-font-size: 14px;
-            -fx-text-fill: #64748B;
-            -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
-        """);
+                    -fx-font-size: 14px;
+                    -fx-text-fill: #64748B;
+                    -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
+                """);
         VBox titleBox = new VBox(4, title, subtitle);
         titleBox.setAlignment(Pos.CENTER_LEFT);
         Button refreshBtn = createModernButton("Refresh", "#6B7280", "#4B5563");
@@ -229,10 +215,10 @@ public class FavoritesPage extends BorderPane {
         var scroller = new ScrollPane(cardGrid);
         scroller.setFitToWidth(true);
         scroller.setStyle("""
-            -fx-background: transparent;
-            -fx-background-color: transparent;
-            -fx-border-color: transparent;
-        """);
+                    -fx-background: transparent;
+                    -fx-background-color: transparent;
+                    -fx-border-color: transparent;
+                """);
         scroller.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         scroller.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         setCenter(scroller);
@@ -247,9 +233,9 @@ public class FavoritesPage extends BorderPane {
         dialog.setResizable(true);
         dialog.getDialogPane().setPrefSize(1000, 760);
         dialog.getDialogPane().setStyle("""
-            -fx-background-color: #FFFFFF;
-            -fx-background-radius: 16px;
-        """);
+                    -fx-background-color: #FFFFFF;
+                    -fx-background-radius: 16px;
+                """);
         dialog.showAndWait();
         reload();
     }
@@ -257,16 +243,16 @@ public class FavoritesPage extends BorderPane {
     private Button createModernButton(String text, String bgColor, String hoverColor) {
         Button btn = new Button(text);
         btn.setStyle(String.format("""
-            -fx-background-color: %s;
-            -fx-text-fill: white;
-            -fx-padding: 10px 16px;
-            -fx-background-radius: 8px;
-            -fx-font-size: 14px;
-            -fx-font-weight: 600;
-            -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
-            -fx-cursor: hand;
-            -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 6, 0, 0, 2);
-        """, bgColor));
+                    -fx-background-color: %s;
+                    -fx-text-fill: white;
+                    -fx-padding: 10px 16px;
+                    -fx-background-radius: 8px;
+                    -fx-font-size: 14px;
+                    -fx-font-weight: 600;
+                    -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
+                    -fx-cursor: hand;
+                    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 6, 0, 0, 2);
+                """, bgColor));
         btn.setOnMouseEntered(e -> btn.setStyle(btn.getStyle().replace(bgColor, hoverColor)));
         btn.setOnMouseExited(e -> btn.setStyle(btn.getStyle().replace(hoverColor, bgColor)));
         return btn;
@@ -286,10 +272,10 @@ public class FavoritesPage extends BorderPane {
     private Label createLoadingIndicator() {
         Label loading = new Label("Loading your favorite notes...");
         loading.setStyle("""
-            -fx-font-size: 16px;
-            -fx-text-fill: #64748B;
-            -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
-        """);
+                    -fx-font-size: 16px;
+                    -fx-text-fill: #64748B;
+                    -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
+                """);
         loading.setAlignment(Pos.CENTER);
         return loading;
     }
@@ -303,17 +289,17 @@ public class FavoritesPage extends BorderPane {
         icon.setStyle("-fx-font-size: 48px;");
         Label title = new Label("No favorite notes yet");
         title.setStyle("""
-            -fx-font-size: 20px;
-            -fx-text-fill: #374151;
-            -fx-font-weight: 600;
-            -fx-font-family: 'SF Pro Display', 'Segoe UI', system-ui;
-        """);
+                    -fx-font-size: 20px;
+                    -fx-text-fill: #374151;
+                    -fx-font-weight: 600;
+                    -fx-font-family: 'SF Pro Display', 'Segoe UI', system-ui;
+                """);
         Label subtitle = new Label("Mark notes as favorites to see them here");
         subtitle.setStyle("""
-            -fx-font-size: 14px;
-            -fx-text-fill: #6B7280;
-            -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
-        """);
+                    -fx-font-size: 14px;
+                    -fx-text-fill: #6B7280;
+                    -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
+                """);
         emptyState.getChildren().addAll(icon, title, subtitle);
         cardGrid.getChildren().add(emptyState);
     }
@@ -327,17 +313,17 @@ public class FavoritesPage extends BorderPane {
         icon.setStyle("-fx-font-size: 48px;");
         Label title = new Label("Something went wrong");
         title.setStyle("""
-            -fx-font-size: 20px;
-            -fx-text-fill: #374151;
-            -fx-font-weight: 600;
-            -fx-font-family: 'SF Pro Display', 'Segoe UI', system-ui;
-        """);
+                    -fx-font-size: 20px;
+                    -fx-text-fill: #374151;
+                    -fx-font-weight: 600;
+                    -fx-font-family: 'SF Pro Display', 'Segoe UI', system-ui;
+                """);
         Label subtitle = new Label("Failed to load favorite notes: " + ex.getMessage());
         subtitle.setStyle("""
-            -fx-font-size: 14px;
-            -fx-text-fill: #6B7280;
-            -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
-        """);
+                    -fx-font-size: 14px;
+                    -fx-text-fill: #6B7280;
+                    -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
+                """);
         Button retryBtn = createModernButton("Try Again", "#3B82F6", "#2563EB");
         retryBtn.setOnAction(e -> {
             animateButtonPress(retryBtn);
@@ -354,9 +340,9 @@ public class FavoritesPage extends BorderPane {
         alert.setContentText(ex.getMessage());
         DialogPane dialogPane = alert.getDialogPane();
         dialogPane.setStyle("""
-            -fx-background-color: #FFFFFF;
-            -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
-        """);
+                    -fx-background-color: #FFFFFF;
+                    -fx-font-family: 'SF Pro Text', 'Segoe UI', system-ui;
+                """);
         alert.showAndWait();
     }
 }

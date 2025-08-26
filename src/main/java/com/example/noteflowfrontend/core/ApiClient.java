@@ -12,7 +12,6 @@ public class ApiClient {
     private static final HttpClient http = HttpClient.newBuilder()
             .cookieHandler(new CookieManager()).build();
 
-    // Use the configured ObjectMapper from JacksonConfig
     private static final ObjectMapper mapper = JacksonConfig.getObjectMapper();
 
     private static String bearer;
