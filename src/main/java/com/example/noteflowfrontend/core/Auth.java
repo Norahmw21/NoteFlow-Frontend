@@ -45,4 +45,6 @@ public class Auth {
     }
     public static boolean isLoggedIn() { return token != null; }
     public static UserDto currentUser() { return me; }
+
+
 }
