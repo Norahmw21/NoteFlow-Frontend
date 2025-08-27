@@ -5,7 +5,7 @@
 
 With a clean interface and smart features, it helps you stay organized, improve focus, and boost academic performance.  
 
-**To Check Backend Code visit this repo ->** [Backend](https://github.com/Norahmw21/NoteFlow-Backend)
+**To Check Backend Code visit this repo → **[Backend](https://github.com/Norahmw21/NoteFlow-Backend)
 
 Project demo → **[Video](https://www.canva.com/design/DAGxK9Peo_E/NWPbT8BwOSOVT2sMx37KWQ/watch?utm_content=DAGxK9Peo_E&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h3287cf69b3)**
 
