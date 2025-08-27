@@ -1,4 +1,4 @@
-# 📘 Note Flow  
+# 📘 NoteFlow  
 
 ## Introduction  
 **Note Flow** is a desktop productivity application built for students and lifelong learners. It combines **note-taking**, **task management**, **GPA calculation**, and **AI-powered learning assistance** in one place.  
