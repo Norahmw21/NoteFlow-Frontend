@@ -7,7 +7,7 @@ With a clean interface and smart features, it helps you stay organized, improve 
 
 **To Check Backend Code visit this repo ->** [Backend](https://github.com/Norahmw21/NoteFlow-Backend)
 
-[demo video](https://www.canva.com/design/DAGxK9Peo_E/NWPbT8BwOSOVT2sMx37KWQ/watch?utm_content=DAGxK9Peo_E&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h3287cf69b3)
+Project demo → **[Video](https://www.canva.com/design/DAGxK9Peo_E/NWPbT8BwOSOVT2sMx37KWQ/watch?utm_content=DAGxK9Peo_E&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h3287cf69b3)**
 
 ---
 
